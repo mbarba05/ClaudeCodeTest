@@ -29,6 +29,8 @@ Everything lives in a single file: `tictactoe.html`. It is structured as inline 
 
 ## Git workflow
 
+**Commit and push after every meaningful unit of work.** Do not batch multiple features or fixes into one commit. The goal is that GitHub always reflects the latest working state so nothing is ever lost and any point can be reverted to.
+
 Commit message convention used in this repo:
 
 | Prefix | When to use |
@@ -37,13 +39,20 @@ Commit message convention used in this repo:
 | `fix:` | bug fix |
 | `style:` | visual/CSS-only change |
 | `refactor:` | restructure with no behavior change |
-
-After every meaningful change: commit locally, then push to `origin/master` so GitHub stays in sync.
+| `docs:` | documentation only |
 
 ```powershell
-git add tictactoe.html
-git commit -m "feat: ..."
+git add <changed-files>
+git commit -m "feat: short description of what changed and why"
 git push
 ```
 
 Remote: https://github.com/mbarba05/ClaudeCodeTest
+
+### When to commit
+
+- After adding a new feature or game mechanic
+- After fixing a bug
+- After any visual/style change
+- After updating CLAUDE.md or other docs
+- Before starting a risky or experimental change (so there is a clean rollback point)
