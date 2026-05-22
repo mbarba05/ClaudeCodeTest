@@ -372,6 +372,113 @@
       100% { transform: translateY(-26px) scale(0.3); opacity: 0; }
     }
     .proj-fly { animation: proj-fly 0.28s ease-out forwards; }
+
+    /* Orb overlay */
+    #orb-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.93);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 110;
+    }
+    #orb-overlay.hidden { display: none; }
+
+    #orb-title {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #a8dadc;
+    }
+
+    #orb-subtitle {
+      font-size: 0.9rem;
+      color: #888;
+      min-height: 18px;
+    }
+
+    #orb-cards {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .orb-card {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      width: 130px;
+      padding: 16px;
+      background: #16213e;
+      border: 2px solid #a8dadc;
+      border-radius: 12px;
+      cursor: pointer;
+      gap: 6px;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+    .orb-card.orb-unit { border-color: #a8dadc; }
+    .orb-card.orb-chest { border-color: #ffd54f; }
+    .orb-card:hover { transform: scale(1.06); }
+    .orb-card.orb-unit:hover { border-color: #d0f0f2; }
+    .orb-card.orb-chest:hover { border-color: #ffe57f; }
+
+    .orb-card .orb-emoji { font-size: 2.2rem; }
+    .orb-card .orb-label { font-size: 0.85rem; font-weight: bold; text-align: center; }
+    .orb-card .orb-desc  { font-size: 0.7rem; color: #888; text-align: center; }
+
+    /* Chest overlay */
+    #chest-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.93);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 120;
+    }
+    #chest-overlay.hidden { display: none; }
+
+    #chest-title {
+      font-size: 1.6rem;
+      font-weight: bold;
+      color: #ffd54f;
+    }
+
+    #chest-subtitle {
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    #chest-cards {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .chest-card {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      width: 180px;
+      padding: 16px;
+      background: #16213e;
+      border: 2px solid #ffd54f;
+      border-radius: 12px;
+      cursor: pointer;
+      gap: 6px;
+      transition: transform 0.15s, border-color 0.15s, box-shadow 0.15s;
+    }
+    .chest-card:hover { transform: scale(1.06); box-shadow: 0 0 12px rgba(255,213,79,0.3); }
+
+    .chest-card .chest-emoji { font-size: 2.2rem; }
+    .chest-card .chest-label { font-size: 0.85rem; font-weight: bold; text-align: center; }
+    .chest-card .chest-desc  { font-size: 0.7rem; color: #888; text-align: center; }
   </style>
 </head>
 <body>
@@ -436,6 +543,18 @@
   <div id="level-select-title">Select Level</div>
   <div id="level-cards"></div>
   <button id="level-select-back">&#8592; Back</button>
+</div>
+
+<div id="orb-overlay" class="overlay-screen hidden">
+  <div id="orb-title">Wave Cleared! Choose Rewards</div>
+  <div id="orb-subtitle"></div>
+  <div id="orb-cards"></div>
+</div>
+
+<div id="chest-overlay" class="overlay-screen hidden">
+  <div id="chest-title">Open the Chest</div>
+  <div id="chest-subtitle">Choose one reward</div>
+  <div id="chest-cards"></div>
 </div>
 
 <script>
@@ -637,6 +756,9 @@
   // ── State ──────────────────────────────────────────────────────────────────
   let playerHP, playerMaxHP, wave, score, gameOver, turnPhase;
   let enemies, enemyIdCounter, playerChars, charIdCounter, dragSource;
+  let pendingOrbs = [];
+  let orbsPhase = false;
+  let upgrades = { statBoost: false, icePending: 0 };
   let gridBuilt = false;
   let currentLevel = 0;
   let currentLevelDef = LEVEL_DEFS[0];
@@ -729,6 +851,11 @@
     enemies = []; enemyIdCounter = 0;
     playerChars = []; charIdCounter = 0;
     dragSource = null;
+    pendingOrbs = [];
+    orbsPhase = false;
+    upgrades = { statBoost: false, icePending: 0 };
+    document.getElementById('orb-overlay').classList.add('hidden');
+    document.getElementById('chest-overlay').classList.add('hidden');
 
     if (!gridBuilt) { buildGrid(); gridBuilt = true; } else clearGrid();
 
@@ -925,15 +1052,16 @@
     if (enemies.length === 0) {
       if (wave === MAX_WAVE) { triggerVictory(); return; }
 
-      document.getElementById('status').textContent = `✨ Wave ${wave} cleared! Bonus fighter incoming!`;
+      document.getElementById('status').textContent = `✨ Wave ${wave} cleared! Choose your rewards!`;
       playerChars.forEach(ch => {
         const el = getCell(ch.row, ch.col);
         if (el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 550); }
       });
 
-      await delay(1100);
+      await delay(900);
       wave++;
-      grantMergeReward();
+      await showOrbRewards();
+      document.getElementById('orb-overlay').classList.add('hidden');
       spawnWave(wave);
       renderAll();
       document.getElementById('status').textContent = `Wave ${wave} / ${MAX_WAVE} — Position fighters, then End Turn.`;
@@ -982,6 +1110,10 @@
 
   // ── Wave reward ───────────────────────────────────────────────────────────
   function grantMergeReward() {
+    // replaced by orb system
+  }
+
+  function grantUnitOrb() {
     const all = [];
     for (let r = ENEMY_ROWS; r < ENEMY_ROWS + PLAYER_ROWS; r++)
       for (let c = 0; c < COLS; c++)
@@ -990,6 +1122,143 @@
     if (!empty.length) return;
     const pick = empty[Math.floor(Math.random() * empty.length)];
     addPlayerChar(pick.row, pick.col, 1);
+  }
+
+  const CHEST_OPTIONS = [
+    { id: 'stat_boost',   emoji: '⚡', label: 'Power Surge',      desc: 'All fighters deal +25% damage',          type: 'upgrade', borderColor: '#ffd54f' },
+    { id: 'enemy_weaken', emoji: '💀', label: 'Weaken Foes',      desc: 'All enemies lose 20% HP now',            type: 'upgrade', borderColor: '#ffd54f' },
+    { id: 'ice_slow',     emoji: '❄️', label: 'Glacial Trap',     desc: 'Next turn: 2 enemies are frozen',        type: 'upgrade', borderColor: '#4fc3f7' },
+    { id: 'heal',         emoji: '💚', label: 'Field Medic',      desc: 'Restore 20 HP',                          type: 'upgrade', borderColor: '#57c264' },
+    { id: 'fire',         emoji: '🔥', label: 'Fire Strike',      desc: 'A fighter gains Fire — burns on hit',    type: 'ability', borderColor: '#e94560' },
+    { id: 'lightning',    emoji: '⚡', label: 'Chain Lightning',  desc: 'A fighter gains Lightning — chains hit', type: 'ability', borderColor: '#4fc3f7' },
+    { id: 'plants',       emoji: '🌿', label: 'Thornshot',        desc: 'A fighter gains Plants — pierces behind',type: 'ability', borderColor: '#57c264' },
+  ];
+
+  function applyChestOption(opt) {
+    if (opt.id === 'stat_boost') {
+      upgrades.statBoost = true;
+    } else if (opt.id === 'enemy_weaken') {
+      for (const e of enemies) e.hp = Math.max(1, Math.floor(e.hp * 0.8));
+      renderEnemyZone();
+    } else if (opt.id === 'ice_slow') {
+      upgrades.icePending = 2;
+    } else if (opt.id === 'heal') {
+      playerHP = Math.min(playerMaxHP, playerHP + 20);
+      updateHUD();
+    } else if (opt.id === 'fire' || opt.id === 'lightning' || opt.id === 'plants') {
+      if (!playerChars.length) return;
+      const maxLv = Math.max(...playerChars.map(c => c.level));
+      const candidates = playerChars.filter(c => c.level === maxLv);
+      const ch = candidates[Math.floor(Math.random() * candidates.length)];
+      ch.ability = opt.id;
+    }
+  }
+
+  function openChest() {
+    return new Promise(resolve => {
+      const pool = shuffleArr([...CHEST_OPTIONS]).slice(0, 3);
+      const overlay = document.getElementById('chest-overlay');
+      const cardsEl = document.getElementById('chest-cards');
+      cardsEl.innerHTML = '';
+
+      for (const opt of pool) {
+        const card = document.createElement('div');
+        card.className = 'chest-card';
+        card.style.borderColor = opt.borderColor;
+        card.innerHTML =
+          `<div class="chest-emoji">${opt.emoji}</div>` +
+          `<div class="chest-label">${opt.label}</div>` +
+          `<div class="chest-desc">${opt.desc}</div>`;
+        card.addEventListener('click', () => {
+          applyChestOption(opt);
+          overlay.classList.add('hidden');
+          resolve();
+        });
+        cardsEl.appendChild(card);
+      }
+
+      overlay.classList.remove('hidden');
+    });
+  }
+
+  function showOrbRewards() {
+    const orbs = [
+      { id: 0, type: 'unit' },
+      { id: 1, type: 'chest' },
+    ];
+    if (wave >= 5) orbs.push({ id: 2, type: 'unit' });
+
+    const overlay  = document.getElementById('orb-overlay');
+    const cardsEl  = document.getElementById('orb-cards');
+    const subtitle = document.getElementById('orb-subtitle');
+
+    function renderOrbCards(remaining) {
+      cardsEl.innerHTML = '';
+      subtitle.textContent = remaining.length > 1
+        ? `${remaining.length} rewards remaining — claim them one by one`
+        : '1 reward remaining';
+      for (const orb of remaining) {
+        const card = document.createElement('div');
+        card.className = `orb-card orb-${orb.type}`;
+        if (orb.type === 'unit') {
+          card.innerHTML =
+            `<div class="orb-emoji">⚔️</div>` +
+            `<div class="orb-label">New Fighter</div>` +
+            `<div class="orb-desc">Adds a level-1 fighter to a random empty cell</div>`;
+        } else {
+          card.innerHTML =
+            `<div class="orb-emoji">📦</div>` +
+            `<div class="orb-label">Mystery Chest</div>` +
+            `<div class="orb-desc">Choose a power-up or ability upgrade</div>`;
+        }
+        card.dataset.orbId = orb.id;
+        cardsEl.appendChild(card);
+      }
+    }
+
+    return new Promise(resolve => {
+      let remaining = [...orbs];
+      overlay.classList.remove('hidden');
+      renderOrbCards(remaining);
+
+      async function claimNext() {
+        if (!remaining.length) { resolve(); return; }
+
+        await new Promise(res => {
+          const handler = async e => {
+            const card = e.target.closest('.orb-card');
+            if (!card) return;
+            const id = parseInt(card.dataset.orbId, 10);
+            const orbIdx = remaining.findIndex(o => o.id === id);
+            if (orbIdx === -1) return;
+
+            const orb = remaining[orbIdx];
+            remaining.splice(orbIdx, 1);
+            cardsEl.removeEventListener('click', handler);
+
+            if (orb.type === 'unit') {
+              grantUnitOrb();
+              renderPlayerZone();
+              res();
+            } else {
+              // open chest overlay (above orb overlay)
+              await openChest();
+              res();
+            }
+          };
+          cardsEl.addEventListener('click', handler);
+        });
+
+        if (remaining.length) {
+          renderOrbCards(remaining);
+          await claimNext();
+        } else {
+          resolve();
+        }
+      }
+
+      claimNext();
+    });
   }
 
   // ── Drag & drop ───────────────────────────────────────────────────────────
