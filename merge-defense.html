@@ -198,7 +198,7 @@
       text-align: center;
     }
 
-    /* Overlay */
+    /* Overlay (game-over / victory) */
     #overlay {
       position: fixed;
       inset: 0;
@@ -218,6 +218,117 @@
       text-transform: uppercase;
     }
     #overlay-sub { font-size: 1.05rem; color: #a8dadc; }
+    #overlay-buttons { display: flex; gap: 14px; }
+
+    /* Main Menu overlay */
+    #menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.97);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      z-index: 200;
+    }
+    #menu-overlay.hidden { display: none; }
+    #menu-title {
+      font-size: 3rem;
+      font-weight: bold;
+      letter-spacing: 6px;
+      color: #e94560;
+      text-transform: uppercase;
+    }
+    #menu-subtitle {
+      font-size: 1rem;
+      color: #a8dadc;
+      letter-spacing: 1px;
+      margin-top: -10px;
+    }
+    #menu-buttons { display: flex; flex-direction: column; gap: 14px; align-items: center; margin-top: 10px; }
+    #menu-buttons button { min-width: 200px; font-size: 1rem; padding: 12px 32px; }
+    #menu-play-btn { background: #e94560; }
+    #menu-play-btn:hover:not(:disabled) { background: #c73652; }
+    #menu-select-btn { background: #0f3460; }
+    #menu-select-btn:hover:not(:disabled) { background: #163a6e; }
+    #menu-howto {
+      font-size: 0.78rem;
+      color: #555;
+      max-width: 420px;
+      text-align: center;
+      line-height: 1.6;
+      margin-top: 12px;
+      padding: 14px 18px;
+      border: 1px solid #1e1e3a;
+      border-radius: 8px;
+      background: rgba(15,52,96,0.12);
+    }
+
+    /* Level Select overlay */
+    #level-select-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.97);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+      z-index: 200;
+    }
+    #level-select-overlay.hidden { display: none; }
+    #level-select-title {
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 5px;
+      color: #e94560;
+      text-transform: uppercase;
+    }
+    #level-cards {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      max-width: 680px;
+    }
+    .level-card {
+      background: #16213e;
+      border: 2px solid #0f3460;
+      border-radius: 12px;
+      min-width: 120px;
+      width: 120px;
+      padding: 18px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, transform 0.1s;
+    }
+    .level-card:hover:not(.locked) { background: #1c2a50; border-color: #a8dadc; transform: scale(1.05); }
+    .level-card.locked { opacity: 0.45; border-color: #333; cursor: not-allowed; }
+    .level-card-num {
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      color: #888;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    .level-card-name {
+      font-size: 1.1rem;
+      font-weight: bold;
+      color: #eee;
+      margin-bottom: 6px;
+    }
+    .level-card-sub {
+      font-size: 0.68rem;
+      color: #a8dadc;
+      line-height: 1.4;
+    }
+    .level-card-lock {
+      font-size: 1.6rem;
+      margin-bottom: 6px;
+    }
+    #level-select-back { background: #0f3460; }
+    #level-select-back:hover:not(:disabled) { background: #163a6e; }
 
     /* Animations */
     @keyframes merge-pop {
@@ -292,20 +403,44 @@
 </div>
 
 <div id="controls">
-  <button id="end-turn-btn">⚔ End Turn</button>
-  <button id="restart-btn">↺ New Game</button>
+  <button id="end-turn-btn">&#9876; End Turn</button>
+  <button id="restart-btn">&#8634; Main Menu</button>
 </div>
 <div id="hint">Drag same-level fighters onto each other to merge them · Fighters auto-attack by column each turn</div>
 
+<!-- Victory / Game-Over overlay -->
 <div id="overlay" class="hidden">
   <div id="overlay-title"></div>
   <div id="overlay-sub"></div>
-  <button id="overlay-btn">Play Again</button>
+  <div id="overlay-buttons">
+    <button id="overlay-btn">Play Again</button>
+    <button id="overlay-btn2">Main Menu</button>
+  </div>
+</div>
+
+<!-- Main Menu overlay -->
+<div id="menu-overlay">
+  <div id="menu-title">Merge Defense</div>
+  <div id="menu-subtitle">A wave-based merging tower defense</div>
+  <div id="menu-buttons">
+    <button id="menu-play-btn">PLAY</button>
+    <button id="menu-select-btn" class="hidden">SELECT LEVEL</button>
+  </div>
+  <div id="menu-howto">
+    Drag same-level fighters onto each other to merge. Stronger fighters deal more damage. Survive all waves to win the level.
+  </div>
+</div>
+
+<!-- Level Select overlay -->
+<div id="level-select-overlay" class="hidden">
+  <div id="level-select-title">Select Level</div>
+  <div id="level-cards"></div>
+  <button id="level-select-back">&#8592; Back</button>
 </div>
 
 <script>
   // ── Constants ──────────────────────────────────────────────────────────────
-  const COLS = 7, ENEMY_ROWS = 7, PLAYER_ROWS = 2, MAX_WAVE = 10, MAX_LEVEL = 6;
+  const COLS = 7, ENEMY_ROWS = 7, PLAYER_ROWS = 2, MAX_CHAR_LEVEL = 6;
   const ATTACK_ROW = ENEMY_ROWS - 1; // row 6: enemies here deal damage then are removed
 
   const LEVEL_CONFIG = [
@@ -319,10 +454,192 @@
 
   const ENEMY_EMOJIS = ['💀', '👻', '👹']; // tier 1 / 2 / 3
 
+  // ── Level definitions ──────────────────────────────────────────────────────
+  const LEVEL_DEFS = [
+    {
+      name: 'Level 1',
+      subtitle: '10 Waves · Starter',
+      waves: 10,
+      enemyHpBase: 30,
+      enemyHpGrowth: 1.5,
+      enemyDmgBase: 5,
+      enemyDmgGrowth: 1.2,
+      startingChars: [
+        { row: 8, col: 2, level: 1 },
+        { row: 8, col: 4, level: 1 },
+      ],
+    },
+    {
+      name: 'Level 2',
+      subtitle: '12 Waves · Normal',
+      waves: 12,
+      enemyHpBase: 50,
+      enemyHpGrowth: 1.6,
+      enemyDmgBase: 8,
+      enemyDmgGrowth: 1.3,
+      startingChars: [
+        { row: 8, col: 2, level: 1 },
+        { row: 8, col: 4, level: 1 },
+      ],
+    },
+    {
+      name: 'Level 3',
+      subtitle: '14 Waves · Hard',
+      waves: 14,
+      enemyHpBase: 80,
+      enemyHpGrowth: 1.7,
+      enemyDmgBase: 12,
+      enemyDmgGrowth: 1.35,
+      startingChars: [
+        { row: 8, col: 1, level: 1 },
+        { row: 8, col: 3, level: 1 },
+        { row: 8, col: 5, level: 1 },
+      ],
+    },
+    {
+      name: 'Level 4',
+      subtitle: '15 Waves · Brutal',
+      waves: 15,
+      enemyHpBase: 120,
+      enemyHpGrowth: 1.8,
+      enemyDmgBase: 18,
+      enemyDmgGrowth: 1.4,
+      startingChars: [
+        { row: 8, col: 2, level: 1 },
+        { row: 8, col: 4, level: 1 },
+      ],
+    },
+    {
+      name: 'Level 5',
+      subtitle: '16 Waves · Nightmare',
+      waves: 16,
+      enemyHpBase: 180,
+      enemyHpGrowth: 1.9,
+      enemyDmgBase: 25,
+      enemyDmgGrowth: 1.45,
+      startingChars: [
+        { row: 8, col: 2, level: 1 },
+        { row: 8, col: 4, level: 1 },
+      ],
+    },
+  ];
+
+  // ── Persistence ────────────────────────────────────────────────────────────
+  function loadUnlocked() {
+    try {
+      const raw = localStorage.getItem('mergeDefenseUnlocked');
+      if (raw) return JSON.parse(raw);
+    } catch (_) {}
+    return [0];
+  }
+
+  function saveUnlocked(arr) {
+    localStorage.setItem('mergeDefenseUnlocked', JSON.stringify(arr));
+  }
+
+  function unlockLevel(idx) {
+    const unlocked = loadUnlocked();
+    if (!unlocked.includes(idx)) {
+      unlocked.push(idx);
+      saveUnlocked(unlocked);
+    }
+  }
+
+  // ── Screen state ───────────────────────────────────────────────────────────
+  let screen = 'menu'; // 'menu' | 'level-select' | 'game'
+
+  function showScreen(s) {
+    screen = s;
+
+    const menuEl        = document.getElementById('menu-overlay');
+    const levelSelEl    = document.getElementById('level-select-overlay');
+    const hudEl         = document.getElementById('hud');
+    const statusEl      = document.getElementById('status');
+    const gameAreaEl    = document.getElementById('game-area');
+    const controlsEl    = document.getElementById('controls');
+    const hintEl        = document.getElementById('hint');
+    const h1El          = document.querySelector('h1');
+
+    if (s === 'menu') {
+      menuEl.classList.remove('hidden');
+      levelSelEl.classList.add('hidden');
+      document.getElementById('overlay').classList.add('hidden');
+      hudEl.style.display        = 'none';
+      statusEl.style.display     = 'none';
+      gameAreaEl.style.display   = 'none';
+      controlsEl.style.display   = 'none';
+      hintEl.style.display       = 'none';
+      h1El.style.display         = 'none';
+      refreshMenuButtons();
+    } else if (s === 'level-select') {
+      menuEl.classList.add('hidden');
+      levelSelEl.classList.remove('hidden');
+      document.getElementById('overlay').classList.add('hidden');
+      hudEl.style.display        = 'none';
+      statusEl.style.display     = 'none';
+      gameAreaEl.style.display   = 'none';
+      controlsEl.style.display   = 'none';
+      hintEl.style.display       = 'none';
+      h1El.style.display         = 'none';
+      buildLevelCards();
+    } else if (s === 'game') {
+      menuEl.classList.add('hidden');
+      levelSelEl.classList.add('hidden');
+      hudEl.style.display        = '';
+      statusEl.style.display     = '';
+      gameAreaEl.style.display   = '';
+      controlsEl.style.display   = '';
+      hintEl.style.display       = '';
+      h1El.style.display         = '';
+    }
+  }
+
+  function refreshMenuButtons() {
+    const unlocked = loadUnlocked();
+    const selectBtn = document.getElementById('menu-select-btn');
+    if (unlocked.length > 1) {
+      selectBtn.classList.remove('hidden');
+    } else {
+      selectBtn.classList.add('hidden');
+    }
+  }
+
+  function buildLevelCards() {
+    const container = document.getElementById('level-cards');
+    container.innerHTML = '';
+    const unlocked = loadUnlocked();
+
+    LEVEL_DEFS.forEach((def, idx) => {
+      const isUnlocked = unlocked.includes(idx);
+      const card = document.createElement('div');
+      card.className = 'level-card' + (isUnlocked ? '' : ' locked');
+
+      if (isUnlocked) {
+        card.innerHTML =
+          `<div class="level-card-num">Level ${idx + 1}</div>` +
+          `<div class="level-card-name">${def.name}</div>` +
+          `<div class="level-card-sub">${def.subtitle}</div>`;
+        card.addEventListener('click', () => {
+          init(idx);
+          showScreen('game');
+        });
+      } else {
+        card.innerHTML =
+          `<div class="level-card-lock">🔒</div>` +
+          `<div class="level-card-num">Level ${idx + 1}</div>` +
+          `<div class="level-card-sub">${def.subtitle}</div>`;
+      }
+
+      container.appendChild(card);
+    });
+  }
+
   // ── State ──────────────────────────────────────────────────────────────────
   let playerHP, playerMaxHP, wave, score, gameOver, turnPhase;
   let enemies, enemyIdCounter, playerChars, charIdCounter, dragSource;
   let gridBuilt = false;
+  let currentLevel = 0;
+  let currentLevelDef = LEVEL_DEFS[0];
 
   // ── Utilities ─────────────────────────────────────────────────────────────
   const getCell = (r, c) => document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
@@ -402,7 +719,11 @@
     playerChars.push({ id: charIdCounter++, row, col, level });
 
   // ── Init ──────────────────────────────────────────────────────────────────
-  function init() {
+  function init(levelIndex) {
+    if (levelIndex === undefined) levelIndex = currentLevel;
+    currentLevel = levelIndex;
+    currentLevelDef = LEVEL_DEFS[levelIndex];
+
     playerHP = playerMaxHP = 100;
     wave = 1; score = 0; gameOver = false; turnPhase = 'player';
     enemies = []; enemyIdCounter = 0;
@@ -411,21 +732,24 @@
 
     if (!gridBuilt) { buildGrid(); gridBuilt = true; } else clearGrid();
 
-    addPlayerChar(8, 2, 1);
-    addPlayerChar(8, 4, 1);
+    for (const sc of currentLevelDef.startingChars) {
+      addPlayerChar(sc.row, sc.col, sc.level);
+    }
 
     spawnWave(1);
     renderAll();
     document.getElementById('overlay').classList.add('hidden');
     document.getElementById('status').textContent = 'Drag to position or merge fighters. Click End Turn when ready.';
     document.getElementById('end-turn-btn').disabled = false;
+    document.getElementById('wave-val').textContent = `1 / ${currentLevelDef.waves}`;
   }
 
   // ── Wave spawning ─────────────────────────────────────────────────────────
   function spawnWave(wNum) {
-    const count  = 3 + (wNum - 1) * 2;
-    const hp     = Math.round(30 * Math.pow(1.5, wNum - 1));
-    const damage = Math.round(5  * Math.pow(1.2, wNum - 1));
+    const def     = currentLevelDef;
+    const count   = 3 + (wNum - 1) * 2;
+    const hp      = Math.round(def.enemyHpBase  * Math.pow(def.enemyHpGrowth,  wNum - 1));
+    const damage  = Math.round(def.enemyDmgBase * Math.pow(def.enemyDmgGrowth, wNum - 1));
 
     const positions = [];
     for (let r = 0; r < Math.min(4, ENEMY_ROWS); r++)
@@ -492,7 +816,7 @@
     const bar = document.getElementById('hp-bar');
     bar.style.width = pct + '%';
     bar.style.background = pct > 60 ? '#57c264' : pct > 30 ? '#ffd54f' : '#e94560';
-    document.getElementById('wave-val').textContent = `${wave} / ${MAX_WAVE}`;
+    document.getElementById('wave-val').textContent = `${wave} / ${currentLevelDef.waves}`;
     document.getElementById('score-val').textContent = score;
   }
 
@@ -581,6 +905,7 @@
   }
 
   async function resolveTurn() {
+    const MAX_WAVE = currentLevelDef.waves;
     document.getElementById('status').textContent = '⚔️ Fighters attacking…';
     playerAttackStep();
     renderEnemyZone();
@@ -707,7 +1032,7 @@
       renderPlayerZone();
     } else if (dst.id !== src.id && dst.level === src.level) {
       // Merge — same level
-      const newLv = Math.min(src.level + 1, MAX_LEVEL);
+      const newLv = Math.min(src.level + 1, MAX_CHAR_LEVEL);
       playerChars = playerChars.filter(c => c.id !== src.id && c.id !== dst.id);
       addPlayerChar(targetRow, targetCol, newLv);
       dragSource = null;
@@ -732,28 +1057,74 @@
     gameOver = true;
     document.getElementById('overlay-title').style.color = '#e94560';
     document.getElementById('overlay-title').textContent = 'GAME OVER';
-    document.getElementById('overlay-sub').textContent = `Wave ${wave} / ${MAX_WAVE} — ${score} enemies defeated`;
-    document.getElementById('overlay-btn').textContent = 'Play Again';
+    document.getElementById('overlay-sub').textContent =
+      `Wave ${wave} / ${currentLevelDef.waves} — ${score} enemies defeated`;
+
+    const btn1 = document.getElementById('overlay-btn');
+    const btn2 = document.getElementById('overlay-btn2');
+    btn1.textContent = 'Retry';
+    btn1.onclick = () => { init(currentLevel); showScreen('game'); };
+    btn2.textContent = 'Main Menu';
+    btn2.onclick = () => { showScreen('menu'); };
+
     document.getElementById('overlay').classList.remove('hidden');
   }
 
   function triggerVictory() {
     gameOver = true;
+
+    // Unlock next level
+    const nextIdx = currentLevel + 1;
+    if (nextIdx < LEVEL_DEFS.length) {
+      unlockLevel(nextIdx);
+    }
+
     document.getElementById('overlay-title').style.color = '#a8dadc';
     document.getElementById('overlay-title').textContent = 'YOU WIN! 🌟';
-    document.getElementById('overlay-sub').textContent = `All 10 waves survived — ${score} enemies defeated`;
-    document.getElementById('overlay-btn').textContent = 'Play Again';
+    document.getElementById('overlay-sub').textContent =
+      `All ${currentLevelDef.waves} waves survived — ${score} enemies defeated`;
+
+    const btn1 = document.getElementById('overlay-btn');
+    const btn2 = document.getElementById('overlay-btn2');
+
+    const unlocked = loadUnlocked();
+    if (nextIdx < LEVEL_DEFS.length && unlocked.includes(nextIdx)) {
+      btn1.textContent = 'Next Level';
+      btn1.style.display = '';
+      btn1.onclick = () => { init(nextIdx); showScreen('game'); };
+    } else {
+      btn1.style.display = 'none';
+    }
+
+    btn2.textContent = 'Main Menu';
+    btn2.onclick = () => { showScreen('menu'); };
+
     document.getElementById('overlay').classList.remove('hidden');
   }
 
   // ── Event wiring ──────────────────────────────────────────────────────────
   document.getElementById('end-turn-btn').addEventListener('click', handleEndTurn);
-  document.getElementById('restart-btn').addEventListener('click', init);
-  document.getElementById('overlay-btn').addEventListener('click', init);
+  document.getElementById('restart-btn').addEventListener('click', () => showScreen('menu'));
   document.addEventListener('dragend', handleDragEnd);
 
+  document.getElementById('menu-play-btn').addEventListener('click', () => {
+    const unlocked = loadUnlocked();
+    // Start from highest unlocked level
+    const highestUnlocked = Math.max(...unlocked);
+    init(highestUnlocked);
+    showScreen('game');
+  });
+
+  document.getElementById('menu-select-btn').addEventListener('click', () => {
+    showScreen('level-select');
+  });
+
+  document.getElementById('level-select-back').addEventListener('click', () => {
+    showScreen('menu');
+  });
+
   // ── Bootstrap ─────────────────────────────────────────────────────────────
-  init();
+  showScreen('menu');
 </script>
 </body>
 </html>
