@@ -29,7 +29,7 @@
     }
 
     /* HUD */
-    #hud { display: flex; gap: 16px; margin-bottom: 10px; }
+    #hud { display: flex; gap: 16px; margin-bottom: 10px; flex-wrap: wrap; justify-content: center; }
 
     .hud-box {
       background: #16213e;
@@ -219,9 +219,10 @@
       text-transform: uppercase;
     }
     #overlay-sub { font-size: 1.05rem; color: #a8dadc; }
+    #overlay-reward { font-size: 0.9rem; color: #ffd54f; text-align: center; }
     #overlay-buttons { display: flex; gap: 14px; }
 
-    /* Main Menu overlay */
+    /* ── Main Menu overlay ── */
     #menu-overlay {
       position: fixed;
       inset: 0;
@@ -229,25 +230,93 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      gap: 22px;
       z-index: 200;
+      overflow-y: auto;
     }
     #menu-overlay.hidden { display: none; }
+
     #menu-title {
       font-size: 3rem;
       font-weight: bold;
       letter-spacing: 6px;
       color: #e94560;
       text-transform: uppercase;
+      margin-top: 24px;
     }
     #menu-subtitle {
       font-size: 1rem;
       color: #a8dadc;
       letter-spacing: 1px;
-      margin-top: -10px;
+      margin-top: 4px;
+      margin-bottom: 12px;
     }
-    #menu-buttons { display: flex; flex-direction: column; gap: 14px; align-items: center; margin-top: 10px; }
+
+    /* XP bar in menu */
+    #menu-xp-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    #menu-xp-label { font-size: 0.75rem; color: #888; letter-spacing: 1px; }
+    #menu-xp-bar-wrap {
+      width: 260px;
+      height: 8px;
+      background: #0f3460;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #menu-xp-bar {
+      height: 100%;
+      background: #a8dadc;
+      border-radius: 4px;
+      transition: width 0.4s;
+    }
+
+    /* Tab bar */
+    #menu-tab-bar {
+      display: flex;
+      background: #16213e;
+      border-radius: 10px 10px 0 0;
+      overflow: hidden;
+      border: 2px solid #0f3460;
+      border-bottom: none;
+      margin-top: 4px;
+      width: 560px;
+      max-width: 96vw;
+    }
+    .menu-tab {
+      flex: 1;
+      padding: 11px 0;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      text-transform: uppercase;
+    }
+    .menu-tab:hover { color: #aaa; }
+    .menu-tab.active { color: #fff; border-bottom: 2px solid #e94560; }
+
+    /* Tab content */
+    #menu-tab-content {
+      width: 560px;
+      max-width: 96vw;
+      background: #16213e;
+      border: 2px solid #0f3460;
+      border-top: none;
+      border-radius: 0 0 12px 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    /* PLAY tab */
+    #tab-play { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+    #menu-buttons { display: flex; flex-direction: column; gap: 14px; align-items: center; }
     #menu-buttons button { min-width: 200px; font-size: 1rem; padding: 12px 32px; }
     #menu-play-btn { background: #e94560; }
     #menu-play-btn:hover:not(:disabled) { background: #c73652; }
@@ -259,12 +328,174 @@
       max-width: 420px;
       text-align: center;
       line-height: 1.6;
-      margin-top: 12px;
       padding: 14px 18px;
       border: 1px solid #1e1e3a;
       border-radius: 8px;
       background: rgba(15,52,96,0.12);
     }
+
+    /* CHARACTER tab */
+    #tab-character { display: flex; flex-direction: column; gap: 16px; }
+    .char-tab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .char-tab-title { font-size: 1rem; font-weight: bold; color: #a8dadc; letter-spacing: 2px; }
+    .gold-display { font-size: 0.95rem; color: #ffd54f; font-weight: bold; }
+
+    .equip-layout {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: center;
+    }
+    .equip-col { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+    .equip-center {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      min-width: 70px;
+    }
+
+    .equip-slot {
+      background: #0f3460;
+      border: 2px solid #1e3a6e;
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-height: 68px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .equip-slot-name {
+      font-size: 0.6rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .equip-slot-item {
+      font-size: 0.78rem;
+      font-weight: bold;
+    }
+    .equip-slot-empty { color: #444; font-style: italic; }
+    .equip-slot-stat {
+      font-size: 0.65rem;
+      color: #a8dadc;
+    }
+
+    /* Inventory */
+    .inventory-section { display: flex; flex-direction: column; gap: 8px; }
+    .inventory-title { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .inventory-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .inv-item-card {
+      background: #0f3460;
+      border: 1px solid #1e3a6e;
+      border-radius: 8px;
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 110px;
+    }
+    .inv-item-name { font-size: 0.75rem; font-weight: bold; }
+    .inv-item-stat { font-size: 0.65rem; color: #a8dadc; }
+    .inv-item-rarity-common  { border-color: #aaa; }
+    .inv-item-rarity-rare    { border-color: #4fc3f7; }
+    .inv-item-rarity-epic    { border-color: #ce93d8; }
+    .inv-equip-btn {
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 4px;
+      background: #e94560;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      letter-spacing: 0;
+      font-weight: bold;
+      transition: background 0.15s;
+    }
+    .inv-equip-btn:hover { background: #c73652; transform: none; }
+    .inventory-empty { font-size: 0.78rem; color: #444; font-style: italic; }
+
+    /* Pending chests */
+    .pending-chests-section { display: flex; flex-direction: column; gap: 8px; }
+    .pending-chests-title { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+    .pending-chests-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pending-chest-btn {
+      background: #16213e;
+      border: 2px solid #ffd54f;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: bold;
+      color: #ffd54f;
+      transition: background 0.15s, transform 0.1s;
+      letter-spacing: 0;
+    }
+    .pending-chest-btn:hover { background: #1c2a50; transform: scale(1.04); }
+    .pending-chest-btn.rarity-rare { border-color: #4fc3f7; color: #4fc3f7; }
+    .pending-chest-btn.rarity-epic { border-color: #ce93d8; color: #ce93d8; }
+
+    /* TALENTS tab */
+    #tab-talents { display: flex; flex-direction: column; gap: 14px; }
+    .talents-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .talents-title { font-size: 1rem; font-weight: bold; color: #a8dadc; letter-spacing: 2px; }
+    .talent-points-display {
+      font-size: 0.85rem;
+      color: #ffd54f;
+      font-weight: bold;
+    }
+    .talent-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .talent-card {
+      background: #0f3460;
+      border: 2px solid #1e3a6e;
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+    .talent-card.owned { border-color: #e94560; }
+    .talent-card-name { font-size: 0.85rem; font-weight: bold; }
+    .talent-card-desc { font-size: 0.7rem; color: #888; line-height: 1.4; }
+    .talent-card-footer { display: flex; justify-content: flex-end; margin-top: 4px; }
+    .talent-owned-badge {
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 4px;
+      background: #e94560;
+      color: #fff;
+      font-weight: bold;
+    }
+    .talent-buy-btn {
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 4px;
+      background: #0f3460;
+      border: 1px solid #a8dadc;
+      color: #a8dadc;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0;
+      transition: background 0.15s;
+    }
+    .talent-buy-btn:hover:not(:disabled) { background: #163a6e; transform: none; }
+    .talent-buy-btn:disabled { background: #1a1a2e; color: #444; border-color: #333; cursor: not-allowed; }
 
     /* Level Select overlay */
     #level-select-overlay {
@@ -374,6 +605,29 @@
     }
     .proj-fly { animation: proj-fly 0.28s ease-out forwards; }
 
+    /* Level-up toast */
+    #levelup-toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #e94560;
+      color: #fff;
+      font-size: 1rem;
+      font-weight: bold;
+      padding: 10px 28px;
+      border-radius: 24px;
+      letter-spacing: 2px;
+      z-index: 999;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    #levelup-toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
     /* Orb overlay */
     #orb-overlay {
       position: fixed;
@@ -430,7 +684,7 @@
     .orb-card .orb-label { font-size: 0.85rem; font-weight: bold; text-align: center; }
     .orb-card .orb-desc  { font-size: 0.7rem; color: #888; text-align: center; }
 
-    /* Chest overlay */
+    /* Chest overlay (in-game ability/upgrade choice) */
     #chest-overlay {
       position: fixed;
       inset: 0;
@@ -481,6 +735,50 @@
     .chest-card .chest-label { font-size: 0.85rem; font-weight: bold; text-align: center; }
     .chest-card .chest-desc  { font-size: 0.7rem; color: #888; text-align: center; }
 
+    /* Equipment item drop overlay */
+    #item-drop-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 46, 0.96);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      z-index: 130;
+    }
+    #item-drop-overlay.hidden { display: none; }
+    #item-drop-title { font-size: 1.6rem; font-weight: bold; color: #ffd54f; }
+    #item-drop-subtitle { font-size: 0.9rem; color: #888; }
+    #item-drop-cards { display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+    .item-drop-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 160px;
+      padding: 16px;
+      background: #16213e;
+      border: 2px solid #ffd54f;
+      border-radius: 12px;
+      gap: 6px;
+    }
+    .item-drop-card.rarity-rare   { border-color: #4fc3f7; }
+    .item-drop-card.rarity-epic   { border-color: #ce93d8; box-shadow: 0 0 10px rgba(206,147,216,0.4); }
+    .item-drop-name { font-size: 0.9rem; font-weight: bold; text-align: center; }
+    .item-drop-stat { font-size: 0.75rem; color: #a8dadc; text-align: center; }
+    .item-drop-ok {
+      margin-top: 4px;
+      font-size: 0.75rem;
+      padding: 5px 16px;
+      border-radius: 6px;
+      background: #0f3460;
+      border: none;
+      color: #eee;
+      cursor: pointer;
+      letter-spacing: 0;
+    }
+    .item-drop-ok:hover { background: #163a6e; transform: none; }
+
     .status-badge { position:absolute; top:2px; right:2px; font-size:0.75rem; line-height:1; pointer-events:none; }
     .ability-badge { position:absolute; bottom:2px; right:2px; font-size:0.65rem; pointer-events:none; }
     .fire-badge  { color:#ff6b35; }
@@ -528,10 +826,14 @@
 </div>
 <div id="hint">Drag same-level fighters onto each other to merge them · Fighters auto-attack by column each turn</div>
 
+<!-- Level-up toast -->
+<div id="levelup-toast">LEVEL UP!</div>
+
 <!-- Victory / Game-Over overlay -->
 <div id="overlay" class="hidden">
   <div id="overlay-title"></div>
   <div id="overlay-sub"></div>
+  <div id="overlay-reward"></div>
   <div id="overlay-buttons">
     <button id="overlay-btn">Play Again</button>
     <button id="overlay-btn2">Main Menu</button>
@@ -542,12 +844,70 @@
 <div id="menu-overlay">
   <div id="menu-title">Merge Defense</div>
   <div id="menu-subtitle">A wave-based merging tower defense</div>
-  <div id="menu-buttons">
-    <button id="menu-play-btn">PLAY</button>
-    <button id="menu-select-btn" class="hidden">SELECT LEVEL</button>
+
+  <div id="menu-xp-area">
+    <div id="menu-xp-label">PLAYER LV 1 · 0 / 100 XP</div>
+    <div id="menu-xp-bar-wrap"><div id="menu-xp-bar" style="width:0%"></div></div>
   </div>
-  <div id="menu-howto">
-    Drag same-level fighters onto each other to merge. Stronger fighters deal more damage. Survive all waves to win the level.
+
+  <!-- Tab bar -->
+  <div id="menu-tab-bar">
+    <div class="menu-tab active" data-tab="play">PLAY</div>
+    <div class="menu-tab" data-tab="character">CHARACTER</div>
+    <div class="menu-tab" data-tab="talents">TALENTS</div>
+  </div>
+
+  <!-- Tab content -->
+  <div id="menu-tab-content">
+
+    <!-- PLAY tab -->
+    <div id="tab-play">
+      <div id="menu-buttons">
+        <button id="menu-play-btn">PLAY</button>
+        <button id="menu-select-btn" class="hidden">SELECT LEVEL</button>
+      </div>
+      <div id="menu-howto">
+        Drag same-level fighters onto each other to merge. Stronger fighters deal more damage. Survive all waves to win the level.
+      </div>
+    </div>
+
+    <!-- CHARACTER tab -->
+    <div id="tab-character" class="hidden">
+      <div class="char-tab-header">
+        <div class="char-tab-title">EQUIPMENT</div>
+        <div class="gold-display" id="char-gold-display">🪙 0</div>
+      </div>
+
+      <div class="equip-layout">
+        <div class="equip-col" id="equip-col-armor">
+          <!-- Helmet, Chest Plate, Shoes -->
+        </div>
+        <div class="equip-center">⚔️</div>
+        <div class="equip-col" id="equip-col-attack">
+          <!-- Weapon, Band, Gloves -->
+        </div>
+      </div>
+
+      <div class="pending-chests-section" id="pending-chests-section">
+        <div class="pending-chests-title">Pending Chests</div>
+        <div class="pending-chests-row" id="pending-chests-row"></div>
+      </div>
+
+      <div class="inventory-section">
+        <div class="inventory-title">Inventory</div>
+        <div class="inventory-grid" id="inventory-grid"></div>
+      </div>
+    </div>
+
+    <!-- TALENTS tab -->
+    <div id="tab-talents" class="hidden">
+      <div class="talents-header">
+        <div class="talents-title">TALENTS</div>
+        <div class="talent-points-display" id="talent-points-display">0 pts available</div>
+      </div>
+      <div class="talent-grid" id="talent-grid"></div>
+    </div>
+
   </div>
 </div>
 
@@ -570,10 +930,17 @@
   <div id="chest-cards"></div>
 </div>
 
+<!-- Item drop overlay (equipment from level clear) -->
+<div id="item-drop-overlay" class="hidden">
+  <div id="item-drop-title">Items Found!</div>
+  <div id="item-drop-subtitle"></div>
+  <div id="item-drop-cards"></div>
+</div>
+
 <script>
   // ── Constants ──────────────────────────────────────────────────────────────
   const COLS = 7, ENEMY_ROWS = 7, PLAYER_ROWS = 2, MAX_CHAR_LEVEL = 6;
-  const ATTACK_ROW = ENEMY_ROWS - 1; // row 6: enemies here deal damage then are removed
+  const ATTACK_ROW = ENEMY_ROWS - 1;
 
   const LEVEL_CONFIG = [
     { emoji: '⚔️',  damage: 10  },
@@ -584,7 +951,7 @@
     { emoji: '🌟',  damage: 700 },
   ];
 
-  const ENEMY_EMOJIS = ['💀', '👻', '👹']; // tier 1 / 2 / 3
+  const ENEMY_EMOJIS = ['💀', '👻', '👹'];
 
   // ── Level definitions ──────────────────────────────────────────────────────
   const LEVEL_DEFS = [
@@ -656,7 +1023,80 @@
     },
   ];
 
-  // ── Persistence ────────────────────────────────────────────────────────────
+  // ── Item Pool ──────────────────────────────────────────────────────────────
+  const ITEM_POOL = [
+    { id:'iron_helmet',    name:'Iron Helmet',     slot:'helmet',     tier:1, hpBonus:15,  dmgBonus:0,  rarity:'common' },
+    { id:'leather_shoes',  name:'Leather Shoes',   slot:'shoes',      tier:1, hpBonus:10,  dmgBonus:0,  rarity:'common' },
+    { id:'cloth_gloves',   name:'Cloth Gloves',    slot:'gloves',     tier:1, hpBonus:0,   dmgBonus:12, rarity:'common' },
+    { id:'silver_band',    name:'Silver Band',     slot:'band',       tier:1, hpBonus:0,   dmgBonus:8,  rarity:'common' },
+    { id:'steel_helmet',   name:'Steel Helmet',    slot:'helmet',     tier:2, hpBonus:30,  dmgBonus:0,  rarity:'rare'   },
+    { id:'chainmail',      name:'Chainmail',       slot:'chestplate', tier:2, hpBonus:50,  dmgBonus:0,  rarity:'rare'   },
+    { id:'iron_sword',     name:'Iron Sword',      slot:'weapon',     tier:2, hpBonus:0,   dmgBonus:20, rarity:'rare'   },
+    { id:'gold_band',      name:'Gold Band',       slot:'band',       tier:2, hpBonus:0,   dmgBonus:16, rarity:'rare'   },
+    { id:'war_boots',      name:'War Boots',       slot:'shoes',      tier:2, hpBonus:20,  dmgBonus:0,  rarity:'rare'   },
+    { id:'dragon_helm',    name:'Dragon Helm',     slot:'helmet',     tier:3, hpBonus:50,  dmgBonus:0,  rarity:'epic'   },
+    { id:'dragon_plate',   name:'Dragon Plate',    slot:'chestplate', tier:3, hpBonus:80,  dmgBonus:0,  rarity:'epic'   },
+    { id:'blade_of_ruin',  name:'Blade of Ruin',   slot:'weapon',     tier:3, hpBonus:0,   dmgBonus:40, rarity:'epic'   },
+    { id:'power_gloves',   name:'Power Gloves',    slot:'gloves',     tier:3, hpBonus:0,   dmgBonus:25, rarity:'epic'   },
+  ];
+
+  // ── Talent definitions ─────────────────────────────────────────────────────
+  const TALENT_DEFS = [
+    { id:'iron_will',      name:'Iron Will',      desc:'+50 max HP at game start',                    cost:1 },
+    { id:'berserker',      name:'Berserker',       desc:'All fighters deal +10% more damage',          cost:1 },
+    { id:'rapid_merge',    name:'Rapid Merge',     desc:'Start each level with an extra L1 fighter',   cost:2 },
+    { id:'salvage',        name:'Salvage',         desc:'Earn +25% more gold from level clears',       cost:2 },
+    { id:'resilience',     name:'Resilience',      desc:'Regenerate 5 HP at the start of each wave',   cost:3 },
+    { id:'double_rewards', name:'Double Rewards',  desc:'Post-wave orb rewards give +1 extra fighter', cost:3 },
+  ];
+
+  // ── XP thresholds ──────────────────────────────────────────────────────────
+  function xpForLevel(lvl) {
+    // level 1->2 = 100, each additional level costs 50 more
+    if (lvl <= 1) return 0;
+    return 100 + (lvl - 2) * 50;
+  }
+
+  function totalXpThreshold(lvl) {
+    // cumulative XP to reach 'lvl' from level 1
+    let total = 0;
+    for (let l = 2; l <= lvl; l++) total += xpForLevel(l);
+    return total;
+  }
+
+  // ── Profile persistence ────────────────────────────────────────────────────
+  const PROFILE_KEY = 'mergeDefenseProfile';
+
+  function defaultProfile() {
+    return {
+      playerLevel: 1,
+      xp: 0,
+      talentPoints: 0,
+      gold: 0,
+      equippedItems: {},   // slot -> item id
+      inventory: [],       // array of item ids
+      purchasedTalents: [],
+      pendingChests: [],   // array of rarity strings: 'common'|'rare'|'epic'
+    };
+  }
+
+  let profile = defaultProfile();
+
+  function loadProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        profile = Object.assign(defaultProfile(), parsed);
+      }
+    } catch (_) {}
+  }
+
+  function saveProfile() {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  }
+
+  // ── Level unlocks persistence ──────────────────────────────────────────────
   function loadUnlocked() {
     try {
       const raw = localStorage.getItem('mergeDefenseUnlocked');
@@ -677,8 +1117,61 @@
     }
   }
 
+  // ── Profile helpers ────────────────────────────────────────────────────────
+  function getEquippedItem(slot) {
+    const id = profile.equippedItems[slot];
+    if (!id) return null;
+    return ITEM_POOL.find(it => it.id === id) || null;
+  }
+
+  function getInventoryItems() {
+    return profile.inventory.map(id => ITEM_POOL.find(it => it.id === id)).filter(Boolean);
+  }
+
+  function computeEquipmentHPBonus() {
+    let bonus = 0;
+    for (const slot of ['helmet','chestplate','shoes']) {
+      const item = getEquippedItem(slot);
+      if (item) bonus += item.hpBonus;
+    }
+    return bonus;
+  }
+
+  function computeEquipmentDmgBonus() {
+    let bonus = 0;
+    for (const slot of ['weapon','band','gloves']) {
+      const item = getEquippedItem(slot);
+      if (item) bonus += item.dmgBonus;
+    }
+    return bonus;
+  }
+
+  function hasTalent(id) {
+    return profile.purchasedTalents.includes(id);
+  }
+
+  // XP grants and level-ups
+  function grantXP(amount) {
+    profile.xp += amount;
+    let leveled = false;
+    while (true) {
+      const needed = xpForLevel(profile.playerLevel + 1);
+      if (profile.xp >= needed) {
+        profile.xp -= needed;
+        profile.playerLevel++;
+        profile.talentPoints++;
+        leveled = true;
+      } else {
+        break;
+      }
+    }
+    saveProfile();
+    return leveled;
+  }
+
   // ── Screen state ───────────────────────────────────────────────────────────
-  let screen = 'menu'; // 'menu' | 'level-select' | 'game'
+  let screen = 'menu';
+  let activeMenuTab = 'play';
 
   function showScreen(s) {
     screen = s;
@@ -702,6 +1195,7 @@
       controlsEl.style.display   = 'none';
       hintEl.style.display       = 'none';
       h1El.style.display         = 'none';
+      renderMenuTabs();
       refreshMenuButtons();
     } else if (s === 'level-select') {
       menuEl.classList.add('hidden');
@@ -724,6 +1218,240 @@
       hintEl.style.display       = '';
       h1El.style.display         = '';
     }
+  }
+
+  // ── Menu tab rendering ─────────────────────────────────────────────────────
+  function switchMenuTab(tab) {
+    activeMenuTab = tab;
+    document.querySelectorAll('.menu-tab').forEach(el => {
+      el.classList.toggle('active', el.dataset.tab === tab);
+    });
+    document.getElementById('tab-play').classList.toggle('hidden', tab !== 'play');
+    document.getElementById('tab-character').classList.toggle('hidden', tab !== 'character');
+    document.getElementById('tab-talents').classList.toggle('hidden', tab !== 'talents');
+
+    if (tab === 'character') renderCharacterTab();
+    if (tab === 'talents')   renderTalentsTab();
+  }
+
+  function renderMenuTabs() {
+    // Update XP bar
+    const nextNeeded = xpForLevel(profile.playerLevel + 1);
+    const pct = nextNeeded > 0 ? Math.min(100, Math.round(profile.xp / nextNeeded * 100)) : 100;
+    document.getElementById('menu-xp-label').textContent =
+      `PLAYER LV ${profile.playerLevel} · ${profile.xp} / ${nextNeeded} XP`;
+    document.getElementById('menu-xp-bar').style.width = pct + '%';
+
+    switchMenuTab(activeMenuTab);
+  }
+
+  // CHARACTER TAB
+  const SLOT_DEFS = [
+    { slot:'helmet',     label:'Helmet',      col:'armor'  },
+    { slot:'chestplate', label:'Chest Plate',  col:'armor'  },
+    { slot:'shoes',      label:'Shoes',        col:'armor'  },
+    { slot:'weapon',     label:'Weapon',       col:'attack' },
+    { slot:'band',       label:'Band (Ring)',   col:'attack' },
+    { slot:'gloves',     label:'Gloves',        col:'attack' },
+  ];
+
+  function renderCharacterTab() {
+    document.getElementById('char-gold-display').textContent = `🪙 ${profile.gold}`;
+
+    const armorCol  = document.getElementById('equip-col-armor');
+    const attackCol = document.getElementById('equip-col-attack');
+    armorCol.innerHTML  = '';
+    attackCol.innerHTML = '';
+
+    for (const sd of SLOT_DEFS) {
+      const item = getEquippedItem(sd.slot);
+      const slotEl = document.createElement('div');
+      slotEl.className = 'equip-slot';
+      let statText = '';
+      if (item) {
+        if (item.hpBonus  > 0) statText = `+${item.hpBonus} max HP`;
+        if (item.dmgBonus > 0) statText = `+${item.dmgBonus} flat dmg`;
+      }
+      slotEl.innerHTML =
+        `<div class="equip-slot-name">${sd.label}</div>` +
+        (item
+          ? `<div class="equip-slot-item">${item.name}</div><div class="equip-slot-stat">${statText}</div>`
+          : `<div class="equip-slot-item equip-slot-empty">— Empty —</div>`);
+      (sd.col === 'armor' ? armorCol : attackCol).appendChild(slotEl);
+    }
+
+    // Pending chests
+    const pendingSection = document.getElementById('pending-chests-section');
+    const pendingRow = document.getElementById('pending-chests-row');
+    pendingRow.innerHTML = '';
+    if (profile.pendingChests.length === 0) {
+      pendingSection.style.display = 'none';
+    } else {
+      pendingSection.style.display = '';
+      profile.pendingChests.forEach((rarity, idx) => {
+        const btn = document.createElement('button');
+        btn.className = `pending-chest-btn rarity-${rarity}`;
+        btn.textContent = `📦 Open ${rarity.charAt(0).toUpperCase() + rarity.slice(1)} Chest`;
+        btn.addEventListener('click', () => openEquipmentChest(rarity, idx));
+        pendingRow.appendChild(btn);
+      });
+    }
+
+    // Inventory
+    const grid = document.getElementById('inventory-grid');
+    grid.innerHTML = '';
+    const invItems = getInventoryItems();
+    if (!invItems.length) {
+      grid.innerHTML = '<div class="inventory-empty">No items in inventory.</div>';
+    } else {
+      for (const item of invItems) {
+        const card = document.createElement('div');
+        card.className = `inv-item-card inv-item-rarity-${item.rarity}`;
+        const statText = item.hpBonus > 0 ? `+${item.hpBonus} max HP` : `+${item.dmgBonus} dmg`;
+        card.innerHTML =
+          `<div class="inv-item-name">${item.name}</div>` +
+          `<div class="inv-item-stat">${statText}</div>`;
+        const btn = document.createElement('button');
+        btn.className = 'inv-equip-btn';
+        btn.textContent = 'Equip';
+        btn.addEventListener('click', () => equipItem(item.id));
+        card.appendChild(btn);
+        grid.appendChild(card);
+      }
+    }
+  }
+
+  function equipItem(itemId) {
+    const item = ITEM_POOL.find(it => it.id === itemId);
+    if (!item) return;
+
+    // If slot already has something equipped, unequip it to inventory
+    const currentEquipped = profile.equippedItems[item.slot];
+    if (currentEquipped) {
+      // Add old item to inventory if not already there
+      if (!profile.inventory.includes(currentEquipped)) {
+        profile.inventory.push(currentEquipped);
+      }
+    }
+
+    // Remove new item from inventory and equip it
+    profile.inventory = profile.inventory.filter(id => id !== itemId);
+    profile.equippedItems[item.slot] = itemId;
+    saveProfile();
+    renderCharacterTab();
+  }
+
+  function openEquipmentChest(rarity, pendingIdx) {
+    // Remove from pending list
+    profile.pendingChests.splice(pendingIdx, 1);
+    saveProfile();
+
+    // Determine pool
+    const pool = ITEM_POOL.filter(it => {
+      if (rarity === 'common') return it.rarity === 'common';
+      if (rarity === 'rare')   return it.rarity === 'rare';
+      if (rarity === 'epic')   return true; // all rarities for epic
+      return false;
+    });
+
+    // Pick 1-2 items
+    const count = Math.random() < 0.4 ? 2 : 1;
+    const shuffled = shuffleArr([...pool]);
+    const drops = shuffled.slice(0, Math.min(count, shuffled.length));
+
+    // Add to inventory
+    for (const item of drops) {
+      profile.inventory.push(item.id);
+    }
+    saveProfile();
+
+    // Show item drop overlay
+    showItemDropOverlay(drops, rarity, () => {
+      renderCharacterTab();
+    });
+  }
+
+  function showItemDropOverlay(items, rarity, onDone) {
+    const overlay  = document.getElementById('item-drop-overlay');
+    const subtitle = document.getElementById('item-drop-subtitle');
+    const cardsEl  = document.getElementById('item-drop-cards');
+
+    const rarityLabel = rarity.charAt(0).toUpperCase() + rarity.slice(1);
+    subtitle.textContent = `${rarityLabel} Chest dropped ${items.length} item${items.length > 1 ? 's' : ''}!`;
+    cardsEl.innerHTML = '';
+
+    let acknowledged = 0;
+    for (const item of items) {
+      const card = document.createElement('div');
+      card.className = `item-drop-card rarity-${item.rarity}`;
+      const statText = item.hpBonus > 0 ? `+${item.hpBonus} max HP` : `+${item.dmgBonus} flat dmg`;
+      card.innerHTML =
+        `<div class="item-drop-name">${item.name}</div>` +
+        `<div class="item-drop-stat">${statText}</div>` +
+        `<div class="item-drop-stat" style="color:#888;font-size:0.65rem;">${item.rarity.toUpperCase()} · ${item.slot}</div>`;
+      const okBtn = document.createElement('button');
+      okBtn.className = 'item-drop-ok';
+      okBtn.textContent = 'Added to Inventory';
+      okBtn.addEventListener('click', () => {
+        acknowledged++;
+        card.style.opacity = '0.4';
+        okBtn.disabled = true;
+        if (acknowledged >= items.length) {
+          overlay.classList.add('hidden');
+          if (onDone) onDone();
+        }
+      });
+      card.appendChild(okBtn);
+      cardsEl.appendChild(card);
+    }
+    overlay.classList.remove('hidden');
+  }
+
+  // TALENTS TAB
+  function renderTalentsTab() {
+    document.getElementById('talent-points-display').textContent =
+      `${profile.talentPoints} pt${profile.talentPoints !== 1 ? 's' : ''} available`;
+
+    const grid = document.getElementById('talent-grid');
+    grid.innerHTML = '';
+
+    for (const td of TALENT_DEFS) {
+      const owned = hasTalent(td.id);
+      const card = document.createElement('div');
+      card.className = 'talent-card' + (owned ? ' owned' : '');
+      card.innerHTML =
+        `<div class="talent-card-name">${td.name}</div>` +
+        `<div class="talent-card-desc">${td.desc}</div>` +
+        `<div style="font-size:0.65rem;color:#555;">Cost: ${td.cost} pt${td.cost !== 1 ? 's' : ''}</div>`;
+
+      const footer = document.createElement('div');
+      footer.className = 'talent-card-footer';
+      if (owned) {
+        footer.innerHTML = '<div class="talent-owned-badge">OWNED</div>';
+      } else {
+        const btn = document.createElement('button');
+        btn.className = 'talent-buy-btn';
+        btn.textContent = `Buy (${td.cost} pt${td.cost !== 1 ? 's' : ''})`;
+        btn.disabled = profile.talentPoints < td.cost;
+        btn.addEventListener('click', () => purchaseTalent(td.id));
+        footer.appendChild(btn);
+      }
+      card.appendChild(footer);
+      grid.appendChild(card);
+    }
+  }
+
+  function purchaseTalent(id) {
+    const td = TALENT_DEFS.find(t => t.id === id);
+    if (!td || hasTalent(id)) return;
+    if (profile.talentPoints < td.cost) return;
+    profile.talentPoints -= td.cost;
+    profile.purchasedTalents.push(id);
+    saveProfile();
+    renderTalentsTab();
+    // Update points display
+    document.getElementById('talent-points-display').textContent =
+      `${profile.talentPoints} pt${profile.talentPoints !== 1 ? 's' : ''} available`;
   }
 
   function refreshMenuButtons() {
@@ -775,6 +1503,7 @@
   let gridBuilt = false;
   let currentLevel = 0;
   let currentLevelDef = LEVEL_DEFS[0];
+  let equipmentDmgBonus = 0;
 
   // ── Utilities ─────────────────────────────────────────────────────────────
   const getCell = (r, c) => document.querySelector(`[data-row="${r}"][data-col="${c}"]`);
@@ -786,6 +1515,14 @@
       [arr[i], arr[j]] = [arr[j], arr[i]];
     }
     return arr;
+  }
+
+  // ── Level-up toast ─────────────────────────────────────────────────────────
+  function showLevelUpToast() {
+    const toast = document.getElementById('levelup-toast');
+    toast.textContent = `LEVEL UP! Player Lv ${profile.playerLevel}`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2400);
   }
 
   // ── Grid build ────────────────────────────────────────────────────────────
@@ -859,7 +1596,16 @@
     currentLevel = levelIndex;
     currentLevelDef = LEVEL_DEFS[levelIndex];
 
-    playerHP = playerMaxHP = 100;
+    // Base HP from equipment and talents
+    let baseHP = 100;
+    baseHP += computeEquipmentHPBonus();
+    if (hasTalent('iron_will')) baseHP += 50;
+
+    playerHP = playerMaxHP = baseHP;
+
+    // Equipment damage bonus for this game session
+    equipmentDmgBonus = computeEquipmentDmgBonus();
+
     wave = 1; score = 0; gameOver = false; turnPhase = 'player';
     enemies = []; enemyIdCounter = 0;
     playerChars = []; charIdCounter = 0;
@@ -870,11 +1616,26 @@
     updateUpgradeDisplay();
     document.getElementById('orb-overlay').classList.add('hidden');
     document.getElementById('chest-overlay').classList.add('hidden');
+    document.getElementById('item-drop-overlay').classList.add('hidden');
 
     if (!gridBuilt) { buildGrid(); gridBuilt = true; } else clearGrid();
 
     for (const sc of currentLevelDef.startingChars) {
       addPlayerChar(sc.row, sc.col, sc.level);
+    }
+
+    // Rapid Merge talent: add an extra L1 fighter
+    if (hasTalent('rapid_merge')) {
+      const all = [];
+      for (let r = ENEMY_ROWS; r < ENEMY_ROWS + PLAYER_ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          all.push({ row: r, col: c });
+      const taken = new Set(playerChars.map(ch => `${ch.row},${ch.col}`));
+      const empty = all.filter(p => !taken.has(`${p.row},${p.col}`));
+      if (empty.length) {
+        const pick = empty[Math.floor(Math.random() * empty.length)];
+        addPlayerChar(pick.row, pick.col, 1);
+      }
     }
 
     spawnWave(1);
@@ -980,12 +1741,18 @@
 
       let dmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
 
+      // Equipment flat damage bonus
+      dmg += equipmentDmgBonus;
+
       // Fire ability: 30% damage boost for column
       const hasFireChar = charsHere.some(c => c.ability === 'fire');
       if (hasFireChar) dmg = Math.floor(dmg * 1.3);
 
       // Power Surge upgrade: +25% global damage
       if (upgrades.statBoost) dmg = Math.floor(dmg * 1.25);
+
+      // Berserker talent: +10% damage
+      if (hasTalent('berserker')) dmg = Math.floor(dmg * 1.1);
 
       // Frontmost enemy in same column, else nearest in adjacent columns
       let target = enemies.filter(e => e.col === col).sort((a, b) => b.row - a.row)[0];
@@ -1018,10 +1785,8 @@
         // Lightning ability: chain damage to adjacent enemy
         const hasLightningChar = charsHere.some(c => c.ability === 'lightning');
         if (hasLightningChar) {
-          // Base column dmg (un-boosted) for chain calculation
           const baseDmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
           const chainDmg = Math.floor(baseDmg * 0.5);
-          // Find adjacent enemies (same row ±1 col, or row ±1 same col)
           const adjacent = enemies.filter(e =>
             e.id !== target.id && (
               (e.row === target.row && (e.col === target.col - 1 || e.col === target.col + 1)) ||
@@ -1031,7 +1796,6 @@
           if (adjacent.length) {
             const chainTarget = adjacent.reduce((min, e) => e.hp < min.hp ? e : min, adjacent[0]);
             chainTarget.hp -= chainDmg;
-            // Flash gap cell of attacking column with lightning color
             if (gapEl) {
               setTimeout(() => {
                 gapEl.textContent = '⚡';
@@ -1052,19 +1816,17 @@
         if (hasPlantsChar) {
           const baseDmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
           const pierceDmg = Math.floor(baseDmg * 0.35);
-          // Scan rightward from target.col + 1, looking for any enemy within 1 row of target
           let pierceTarget = null;
           for (let sc = target.col + 1; sc < COLS && !pierceTarget; sc++) {
             const candidates = enemies.filter(e =>
               e.id !== target.id &&
               e.col === sc &&
               Math.abs(e.row - target.row) <= 1
-            ).sort((a, b) => b.row - a.row); // prefer closest to player (highest row)
+            ).sort((a, b) => b.row - a.row);
             if (candidates.length) pierceTarget = candidates[0];
           }
           if (pierceTarget) {
             pierceTarget.hp -= pierceDmg;
-            // Visual in the gap cell of the pierce target's column
             const pierceGapEl = document.querySelector(`.gap-cell[data-col="${pierceTarget.col}"]`);
             if (pierceGapEl) {
               setTimeout(() => {
@@ -1080,7 +1842,6 @@
   }
 
   function advanceEnemies() {
-    // Apply ice pending: freeze up to icePending front-most enemies not already frozen
     if (upgrades.icePending > 0) {
       const freezeCandidates = enemies
         .filter(e => !e.frozen && e.row < ATTACK_ROW)
@@ -1090,7 +1851,7 @@
       upgrades.icePending = 0;
     }
 
-    enemies.sort((a, b) => b.row - a.row); // front enemies move first
+    enemies.sort((a, b) => b.row - a.row);
     const occupied = new Set();
     const movedIds = [];
 
@@ -1099,7 +1860,6 @@
         occupied.add(`${e.row},${e.col}`);
         continue;
       }
-      // Frozen enemies skip movement this turn and thaw
       if (e.frozen) {
         e.frozen = false;
         occupied.add(`${e.row},${e.col}`);
@@ -1165,7 +1925,7 @@
 
     await delay(250);
 
-    // Burn tick — deal burn damage then clear burning flag
+    // Burn tick
     const burningEnemies = enemies.filter(e => e.burning);
     if (burningEnemies.length) {
       document.getElementById('status').textContent = '🔥 Burn damage ticks...';
@@ -1173,7 +1933,6 @@
         e.hp -= e.burnDamage;
         e.burning = false;
       }
-      // Remove enemies killed by burn
       const burnKilled = enemies.filter(e => e.hp <= 0).length;
       score += burnKilled;
       enemies = enemies.filter(e => e.hp > 0);
@@ -1186,7 +1945,17 @@
     if (enemies.length === 0) {
       if (wave === MAX_WAVE) { triggerVictory(); return; }
 
-      document.getElementById('status').textContent = `✨ Wave ${wave} cleared! Choose your rewards!`;
+      // Grant wave XP
+      const waveXP = wave * 10;
+      const leveled = grantXP(waveXP);
+      if (leveled && screen === 'game') showLevelUpToast();
+
+      // Resilience talent: regen 5 HP at start of next wave
+      if (hasTalent('resilience')) {
+        playerHP = Math.min(playerMaxHP, playerHP + 5);
+      }
+
+      document.getElementById('status').textContent = `✨ Wave ${wave} cleared! +${waveXP} XP! Choose your rewards!`;
       playerChars.forEach(ch => {
         const el = getCell(ch.row, ch.col);
         if (el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 550); }
@@ -1238,7 +2007,7 @@
 
     turnPhase = 'player';
     document.getElementById('end-turn-btn').disabled = false;
-    renderPlayerZone(); // re-enables draggable on chars
+    renderPlayerZone();
     document.getElementById('status').textContent = `Wave ${wave} / ${MAX_WAVE} — Position or merge fighters, then End Turn.`;
   }
 
@@ -1323,6 +2092,11 @@
     ];
     if (wave >= 5) orbs.push({ id: 2, type: 'unit' });
 
+    // Double Rewards talent: push one more unit orb
+    if (hasTalent('double_rewards')) {
+      orbs.push({ id: orbs.length, type: 'unit' });
+    }
+
     const overlay  = document.getElementById('orb-overlay');
     const cardsEl  = document.getElementById('orb-cards');
     const subtitle = document.getElementById('orb-subtitle');
@@ -1376,7 +2150,6 @@
               renderPlayerZone();
               res();
             } else {
-              // open chest overlay (above orb overlay)
               await openChest();
               res();
             }
@@ -1429,13 +2202,11 @@
     const dst = playerChars.find(c => c.row === targetRow && c.col === targetCol);
 
     if (!dst) {
-      // Move to empty cell
       src.row = targetRow;
       src.col = targetCol;
       dragSource = null;
       renderPlayerZone();
     } else if (dst.id !== src.id && dst.level === src.level) {
-      // Merge — same level
       const newLv = Math.min(src.level + 1, MAX_CHAR_LEVEL);
       playerChars = playerChars.filter(c => c.id !== src.id && c.id !== dst.id);
       addPlayerChar(targetRow, targetCol, newLv);
@@ -1444,7 +2215,6 @@
       const el = getCell(targetRow, targetCol);
       if (el) { el.classList.add('merge-pop'); setTimeout(() => el.classList.remove('merge-pop'), 450); }
     } else {
-      // Different level — no-op
       dragSource = null;
       renderPlayerZone();
     }
@@ -1463,10 +2233,12 @@
     document.getElementById('overlay-title').textContent = 'GAME OVER';
     document.getElementById('overlay-sub').textContent =
       `Wave ${wave} / ${currentLevelDef.waves} — ${score} enemies defeated`;
+    document.getElementById('overlay-reward').textContent = '';
 
     const btn1 = document.getElementById('overlay-btn');
     const btn2 = document.getElementById('overlay-btn2');
     btn1.textContent = 'Retry';
+    btn1.style.display = '';
     btn1.onclick = () => { init(currentLevel); showScreen('game'); };
     btn2.textContent = 'Main Menu';
     btn2.onclick = () => { showScreen('menu'); };
@@ -1483,10 +2255,32 @@
       unlockLevel(nextIdx);
     }
 
+    // Grant XP for level completion
+    const levelXP = currentLevel * 50 + 100;
+    const leveled = grantXP(levelXP);
+    if (leveled) showLevelUpToast();
+
+    // Grant gold
+    let goldEarned = (currentLevel + 1) * 50;
+    if (hasTalent('salvage')) goldEarned = Math.floor(goldEarned * 1.25);
+    profile.gold += goldEarned;
+
+    // Grant a chest based on level
+    let chestRarity = 'common';
+    if (currentLevel >= 4)      chestRarity = 'epic';
+    else if (currentLevel >= 2) chestRarity = 'rare';
+    profile.pendingChests.push(chestRarity);
+
+    saveProfile();
+
+    const rarityLabel = chestRarity.charAt(0).toUpperCase() + chestRarity.slice(1);
+
     document.getElementById('overlay-title').style.color = '#a8dadc';
     document.getElementById('overlay-title').textContent = 'YOU WIN! 🌟';
     document.getElementById('overlay-sub').textContent =
       `All ${currentLevelDef.waves} waves survived — ${score} enemies defeated`;
+    document.getElementById('overlay-reward').textContent =
+      `+${levelXP} XP · 🪙 +${goldEarned} Gold · 📦 1 ${rarityLabel} Chest added!`;
 
     const btn1 = document.getElementById('overlay-btn');
     const btn2 = document.getElementById('overlay-btn2');
@@ -1513,7 +2307,6 @@
 
   document.getElementById('menu-play-btn').addEventListener('click', () => {
     const unlocked = loadUnlocked();
-    // Start from highest unlocked level
     const highestUnlocked = Math.max(...unlocked);
     init(highestUnlocked);
     showScreen('game');
@@ -1527,7 +2320,13 @@
     showScreen('menu');
   });
 
+  // Tab switching
+  document.querySelectorAll('.menu-tab').forEach(tab => {
+    tab.addEventListener('click', () => switchMenuTab(tab.dataset.tab));
+  });
+
   // ── Bootstrap ─────────────────────────────────────────────────────────────
+  loadProfile();
   showScreen('menu');
 </script>
 </body>
