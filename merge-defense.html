@@ -1868,6 +1868,7 @@
       const nr = e.row + 1;
       if (!occupied.has(`${nr},${e.col}`)) {
         e.row = nr;
+        if (nr === ATTACK_ROW) e.justArrived = true;
         occupied.add(`${nr},${e.col}`);
         movedIds.push(e.id);
       } else {
@@ -1877,6 +1878,7 @@
           if (nc < 0 || nc >= COLS) continue;
           if (!occupied.has(`${nr},${nc}`)) {
             e.col = nc; e.row = nr;
+            if (nr === ATTACK_ROW) e.justArrived = true;
             occupied.add(`${nr},${nc}`);
             movedIds.push(e.id);
             moved = true;
@@ -1890,11 +1892,16 @@
   }
 
   function enemyAttackStep() {
-    const attackers = enemies.filter(e => e.row === ATTACK_ROW);
-    const dmg = attackers.reduce((s, e) => s + e.damage, 0);
+    const atFront = enemies.filter(e => e.row === ATTACK_ROW);
+    // Enemies that just arrived this turn wait one more turn before attacking
+    const freshArrivals = atFront.filter(e => e.justArrived);
+    const veterans     = atFront.filter(e => !e.justArrived);
+    freshArrivals.forEach(e => { e.justArrived = false; });
+    const dmg = veterans.reduce((s, e) => s + e.damage, 0);
     if (dmg > 0) {
       playerHP = Math.max(0, playerHP - dmg);
-      enemies = enemies.filter(e => e.row !== ATTACK_ROW);
+      const veteranIds = new Set(veterans.map(v => v.id));
+      enemies = enemies.filter(e => !veteranIds.has(e.id));
     }
     return dmg;
   }
@@ -2054,6 +2061,7 @@
       const candidates = playerChars.filter(c => c.level === maxLv);
       const ch = candidates[Math.floor(Math.random() * candidates.length)];
       ch.ability = opt.id;
+      renderPlayerZone(); // show the ability badge immediately
     }
     updateUpgradeDisplay();
   }
