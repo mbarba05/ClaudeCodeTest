@@ -479,6 +479,11 @@
     .chest-card .chest-emoji { font-size: 2.2rem; }
     .chest-card .chest-label { font-size: 0.85rem; font-weight: bold; text-align: center; }
     .chest-card .chest-desc  { font-size: 0.7rem; color: #888; text-align: center; }
+
+    .status-badge { position:absolute; top:2px; right:2px; font-size:0.75rem; line-height:1; pointer-events:none; }
+    .ability-badge { position:absolute; bottom:2px; right:2px; font-size:0.65rem; pointer-events:none; }
+    .fire-badge  { color:#ff6b35; }
+    .chain-flash { color:#ffe600; }
   </style>
 </head>
 <body>
@@ -903,10 +908,12 @@
       if (!el) continue;
       const tier = e.wave <= 3 ? 1 : e.wave <= 6 ? 2 : 3;
       const pct  = Math.max(0, Math.round(e.hp / e.maxHp * 100));
+      const fireBadge = e.burning ? `<div class="status-badge fire-badge">🔥</div>` : '';
       el.innerHTML =
         `<div class="enemy-emoji">${ENEMY_EMOJIS[tier - 1]}</div>` +
         `<div class="enemy-hp-wrap"><div class="enemy-hp-bar" style="width:${pct}%"></div></div>` +
-        `<div class="enemy-stats">${e.hp}/${e.maxHp}</div>`;
+        `<div class="enemy-stats">${e.hp}/${e.maxHp}</div>` +
+        fireBadge;
       el.className = `cell enemy-cell enemy-t${tier}`;
     }
   }
@@ -927,10 +934,13 @@
       const el = getCell(ch.row, ch.col);
       if (!el) continue;
       const cfg = LEVEL_CONFIG[ch.level - 1];
+      const abilityEmoji = ch.ability === 'fire' ? '🔥' : ch.ability === 'lightning' ? '⚡' : ch.ability === 'plants' ? '🌿' : '';
+      const abilityBadge = abilityEmoji ? `<div class="ability-badge">${abilityEmoji}</div>` : '';
       el.innerHTML =
         `<div class="char-emoji">${cfg.emoji}</div>` +
         `<div class="char-badge">L${ch.level}</div>` +
-        `<div class="char-dmg">${cfg.damage}⚡</div>`;
+        `<div class="char-dmg">${cfg.damage}⚡</div>` +
+        abilityBadge;
       el.className = `cell player-cell char-cell char-lv${ch.level}`;
       el.setAttribute('draggable', 'true');
       el.ondragstart = e => handleDragStart(e, ch.id);
@@ -953,7 +963,11 @@
       const charsHere = playerChars.filter(c => c.col === col);
       if (!charsHere.length) continue;
 
-      const dmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
+      let dmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
+
+      // Fire ability: 30% damage boost for column
+      const hasFireChar = charsHere.some(c => c.ability === 'fire');
+      if (hasFireChar) dmg = Math.floor(dmg * 1.3);
 
       // Frontmost enemy in same column, else nearest in adjacent columns
       let target = enemies.filter(e => e.col === col).sort((a, b) => b.row - a.row)[0];
@@ -968,11 +982,80 @@
 
       if (target) {
         target.hp -= dmg;
+
+        // Gap flash for primary attack
         const gapEl = document.querySelector(`.gap-cell[data-col="${col}"]`);
         if (gapEl) {
           gapEl.textContent = '⚡';
           gapEl.classList.add('proj-fly');
           setTimeout(() => { gapEl.textContent = ''; gapEl.classList.remove('proj-fly'); }, 300);
+        }
+
+        // Fire ability: apply burn
+        if (hasFireChar) {
+          target.burning = true;
+          target.burnDamage = Math.floor(dmg * 0.4);
+        }
+
+        // Lightning ability: chain damage to adjacent enemy
+        const hasLightningChar = charsHere.some(c => c.ability === 'lightning');
+        if (hasLightningChar) {
+          // Base column dmg (un-boosted) for chain calculation
+          const baseDmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
+          const chainDmg = Math.floor(baseDmg * 0.5);
+          // Find adjacent enemies (same row ±1 col, or row ±1 same col)
+          const adjacent = enemies.filter(e =>
+            e.id !== target.id && (
+              (e.row === target.row && (e.col === target.col - 1 || e.col === target.col + 1)) ||
+              (e.col === target.col && (e.row === target.row - 1 || e.row === target.row + 1))
+            )
+          );
+          if (adjacent.length) {
+            const chainTarget = adjacent.reduce((min, e) => e.hp < min.hp ? e : min, adjacent[0]);
+            chainTarget.hp -= chainDmg;
+            // Flash gap cell of attacking column with lightning color
+            if (gapEl) {
+              setTimeout(() => {
+                gapEl.textContent = '⚡';
+                gapEl.style.color = '#ffe600';
+                gapEl.classList.add('proj-fly');
+                setTimeout(() => {
+                  gapEl.textContent = '';
+                  gapEl.style.color = '';
+                  gapEl.classList.remove('proj-fly');
+                }, 300);
+              }, 150);
+            }
+          }
+        }
+
+        // Plants ability: pierce — hit next enemy to the right in same/adjacent row
+        const hasPlantsChar = charsHere.some(c => c.ability === 'plants');
+        if (hasPlantsChar) {
+          const baseDmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
+          const pierceDmg = Math.floor(baseDmg * 0.35);
+          // Scan rightward from target.col + 1, looking for any enemy within 1 row of target
+          let pierceTarget = null;
+          for (let sc = target.col + 1; sc < COLS && !pierceTarget; sc++) {
+            const candidates = enemies.filter(e =>
+              e.id !== target.id &&
+              e.col === sc &&
+              Math.abs(e.row - target.row) <= 1
+            ).sort((a, b) => b.row - a.row); // prefer closest to player (highest row)
+            if (candidates.length) pierceTarget = candidates[0];
+          }
+          if (pierceTarget) {
+            pierceTarget.hp -= pierceDmg;
+            // Visual in the gap cell of the pierce target's column
+            const pierceGapEl = document.querySelector(`.gap-cell[data-col="${pierceTarget.col}"]`);
+            if (pierceGapEl) {
+              setTimeout(() => {
+                pierceGapEl.textContent = '🌿';
+                pierceGapEl.classList.add('proj-fly');
+                setTimeout(() => { pierceGapEl.textContent = ''; pierceGapEl.classList.remove('proj-fly'); }, 300);
+              }, 150);
+            }
+          }
         }
       }
     }
@@ -1047,6 +1130,23 @@
     updateHUD();
 
     await delay(250);
+
+    // Burn tick — deal burn damage then clear burning flag
+    const burningEnemies = enemies.filter(e => e.burning);
+    if (burningEnemies.length) {
+      document.getElementById('status').textContent = '🔥 Burn damage ticks...';
+      for (const e of burningEnemies) {
+        e.hp -= e.burnDamage;
+        e.burning = false;
+      }
+      // Remove enemies killed by burn
+      const burnKilled = enemies.filter(e => e.hp <= 0).length;
+      score += burnKilled;
+      enemies = enemies.filter(e => e.hp > 0);
+      renderEnemyZone();
+      updateHUD();
+      await delay(300);
+    }
 
     // Wave cleared?
     if (enemies.length === 0) {
