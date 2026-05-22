@@ -136,7 +136,8 @@
     .char-cell { cursor: grab; }
     .char-cell:active { cursor: grabbing; }
     .char-cell.dragging { opacity: 0.35; }
-    .drag-over { background: #122040 !important; border-color: #a8dadc !important; }
+    .drag-over    { background: #122040 !important; border-color: #a8dadc !important; }
+    .drag-invalid { background: rgba(233,69,96,0.12) !important; border-color: #e94560 !important; cursor: no-drop !important; }
 
     .char-emoji { font-size: 1.45rem; line-height: 1; margin-top: 2px; }
     .char-badge {
@@ -2188,20 +2189,26 @@
 
   function handleDragOver(e, row, col) {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    const src = dragSource ? playerChars.find(c => c.id === dragSource.id) : null;
+    const dst = playerChars.find(c => c.row === row && c.col === col);
+    const valid = !dst || (src && dst.id !== src.id && dst.level === src.level);
+    e.dataTransfer.dropEffect = valid ? 'move' : 'none';
     const el = getCell(row, col);
-    if (el) el.classList.add('drag-over');
+    if (el) {
+      el.classList.remove('drag-over', 'drag-invalid');
+      el.classList.add(valid ? 'drag-over' : 'drag-invalid');
+    }
   }
 
   function handleDragLeave(e, row, col) {
     const el = getCell(row, col);
-    if (el) el.classList.remove('drag-over');
+    if (el) el.classList.remove('drag-over', 'drag-invalid');
   }
 
   function handleDrop(e, targetRow, targetCol) {
     e.preventDefault();
     const targetEl = getCell(targetRow, targetCol);
-    if (targetEl) targetEl.classList.remove('drag-over');
+    if (targetEl) targetEl.classList.remove('drag-over', 'drag-invalid');
     if (!dragSource || turnPhase !== 'player' || gameOver) { dragSource = null; return; }
 
     const src = playerChars.find(c => c.id === dragSource.id);
@@ -2230,7 +2237,9 @@
 
   function handleDragEnd() {
     document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
-    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+    document.querySelectorAll('.drag-over, .drag-invalid').forEach(el => {
+      el.classList.remove('drag-over', 'drag-invalid');
+    });
     dragSource = null;
   }
 
