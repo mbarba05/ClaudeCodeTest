@@ -787,6 +787,88 @@
     .chain-flash { color:#ffe600; }
     .ice-badge   { color:#a8dadc; }
 
+    /* SHOP tab */
+    #tab-shop { display: flex; flex-direction: column; gap: 14px; }
+    .shop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .shop-title { font-size: 1rem; font-weight: bold; color: #ffd54f; letter-spacing: 2px; }
+    .shop-desc { font-size: 0.75rem; color: #666; }
+    .shop-chests {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .shop-chest-card {
+      background: #0f3460;
+      border: 2px solid #1e3a6e;
+      border-radius: 10px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .shop-chest-card.tier-bronze { border-color: #cd7f32; }
+    .shop-chest-card.tier-silver { border-color: #aaa; }
+    .shop-chest-card.tier-gold   { border-color: #ffd54f; box-shadow: 0 0 8px rgba(255,213,79,0.2); }
+    .shop-chest-emoji { font-size: 2.2rem; flex-shrink: 0; }
+    .shop-chest-info { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+    .shop-chest-name { font-size: 0.9rem; font-weight: bold; }
+    .shop-chest-subdesc { font-size: 0.68rem; color: #888; }
+    .shop-chest-cost { font-size: 0.8rem; color: #ffd54f; font-weight: bold; }
+    .shop-buy-btn {
+      font-size: 0.75rem;
+      padding: 8px 16px;
+      border-radius: 6px;
+      background: #e94560;
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0;
+      transition: background 0.15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .shop-buy-btn:hover:not(:disabled) { background: #c73652; transform: none; }
+    .shop-buy-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+    /* Stats panel in character tab */
+    .stats-panel {
+      background: #0a1f3a;
+      border: 1px solid #1e3a6e;
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .stats-panel-title {
+      font-size: 0.7rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 4px;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.78rem;
+    }
+    .stat-label { color: #a8dadc; }
+    .stat-value { font-weight: bold; color: #eee; }
+    .stat-detail { font-size: 0.62rem; color: #555; margin-left: 4px; }
+    .set-bonus-row {
+      font-size: 0.7rem;
+      color: #ffd54f;
+      padding: 4px 0;
+      border-top: 1px solid #1e3a6e;
+      margin-top: 2px;
+    }
+
     /* Lightning chain flash on chained enemy cells */
     @keyframes lightning-chain-anim {
       0%   { box-shadow: 0 0 0px rgba(255,230,0,0); border-color: #ffe600; background: rgba(255,230,0,0.22); }
@@ -1025,25 +1107,33 @@
 
   <div id="auth-box">
     <div id="auth-tab-bar">
-      <div class="auth-tab active" data-auth-tab="login">LOGIN</div>
-      <div class="auth-tab" data-auth-tab="register">REGISTER</div>
+      <div class="auth-tab active" data-auth-tab="login" onclick="
+        document.querySelectorAll('.auth-tab').forEach(t=>t.classList.toggle('active',t.dataset.authTab==='login'));
+        document.getElementById('login-form').classList.remove('hidden');
+        document.getElementById('register-form').classList.add('hidden');
+      ">LOGIN</div>
+      <div class="auth-tab" data-auth-tab="register" onclick="
+        document.querySelectorAll('.auth-tab').forEach(t=>t.classList.toggle('active',t.dataset.authTab==='register'));
+        document.getElementById('login-form').classList.add('hidden');
+        document.getElementById('register-form').classList.remove('hidden');
+      ">REGISTER</div>
     </div>
     <div id="auth-forms">
       <!-- Login form -->
-      <form id="login-form" class="auth-form" autocomplete="on">
+      <form id="login-form" class="auth-form" autocomplete="on" onsubmit="return false">
         <input class="auth-input" type="email" id="login-email" placeholder="Email" autocomplete="email" required>
         <input class="auth-input" type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
         <div class="auth-error" id="login-error"></div>
-        <button class="auth-btn" type="submit" id="login-btn">LOGIN</button>
+        <button class="auth-btn" type="button" id="login-btn" onclick="doLogin()">LOGIN</button>
       </form>
       <!-- Register form -->
-      <form id="register-form" class="auth-form hidden" autocomplete="on">
+      <form id="register-form" class="auth-form hidden" autocomplete="on" onsubmit="return false">
         <input class="auth-input" type="text" id="reg-username" placeholder="Username" autocomplete="username" required>
         <input class="auth-input" type="email" id="reg-email" placeholder="Email" autocomplete="email" required>
         <input class="auth-input" type="password" id="reg-password" placeholder="Password (min 6 chars)" autocomplete="new-password" required>
         <div class="auth-error" id="reg-error"></div>
         <div class="auth-success" id="reg-success"></div>
-        <button class="auth-btn" type="submit" id="register-btn">CREATE ACCOUNT</button>
+        <button class="auth-btn" type="button" id="register-btn" onclick="doRegister()">CREATE ACCOUNT</button>
       </form>
     </div>
   </div>
@@ -1117,6 +1207,7 @@
     <div class="menu-tab active" data-tab="play">PLAY</div>
     <div class="menu-tab" data-tab="character">CHARACTER</div>
     <div class="menu-tab" data-tab="talents">TALENTS</div>
+    <div class="menu-tab" data-tab="shop">SHOP</div>
     <div class="menu-tab" data-tab="leaderboard">RANKS</div>
   </div>
 
@@ -1169,6 +1260,16 @@
         <div class="talent-points-display" id="talent-points-display">0 pts available</div>
       </div>
       <div class="talent-grid" id="talent-grid"></div>
+    </div>
+
+    <!-- SHOP tab -->
+    <div id="tab-shop" class="hidden">
+      <div class="shop-header">
+        <div class="shop-title">SHOP</div>
+        <div class="gold-display" id="shop-gold-display">🪙 0</div>
+      </div>
+      <div class="shop-desc">Spend gold to open chests and collect powerful equipment.</div>
+      <div class="shop-chests" id="shop-chests"></div>
     </div>
 
     <!-- LEADERBOARD tab -->
@@ -1225,16 +1326,101 @@
 </div>
 
 <script>
-  // ── Supabase client ────────────────────────────────────────────────────────
-  const supabase = window.supabase.createClient(
-    'https://bomqdsizgmgpaxrsfwsv.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvbXFkc2l6Z21ncGF4cnNmd3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjU5MjcsImV4cCI6MjA5NTEwMTkyN30.8eyYVdADcMT96T1-vxksLEqlW4evKvJAgd0NMCJd1Xk'
-  );
+  // ── Auth script (isolated block — must not depend on game code) ───────────
+  // Named sbClient to avoid clashing with window.supabase from the CDN
+  let sbClient = null;
+  try {
+    const _sb = window.supabase || window.supabaseJs;
+    if (!_sb) throw new Error('Supabase CDN not loaded');
+    const { createClient } = _sb;
+    sbClient = createClient(
+      'https://bomqdsizgmgpaxrsfwsv.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvbXFkc2l6Z21ncGF4cnNmd3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjU5MjcsImV4cCI6MjA5NTEwMTkyN30.8eyYVdADcMT96T1-vxksLEqlW4evKvJAgd0NMCJd1Xk'
+    );
+  } catch (e) {
+    console.error('Supabase init failed:', e);
+  }
 
-  // Logged-in user's Supabase UUID — set after auth
   let currentUserId = null;
   let currentUsername = null;
 
+  function _authShowError(id, msg) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = msg;
+  }
+
+  window.doLogin = async function() {
+    const email    = (document.getElementById('login-email')?.value || '').trim();
+    const password = document.getElementById('login-password')?.value || '';
+    const btn      = document.getElementById('login-btn');
+    _authShowError('login-error', '');
+    if (!email || !password) { _authShowError('login-error', 'Email and password required.'); return; }
+    if (!sbClient) { _authShowError('login-error', 'Connection unavailable — check internet and reload.'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Logging in…'; }
+    try {
+      const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
+      if (error) {
+        _authShowError('login-error', error.message);
+      } else {
+        const { data: prof } = await sbClient.from('profiles').select('username').eq('id', data.user.id).single();
+        currentUserId = data.user.id;
+        currentUsername = prof?.username || '';
+        if (typeof loadProfile === 'function') await loadProfile();
+        document.getElementById('auth-screen')?.classList.add('hidden');
+        if (typeof showScreen === 'function') showScreen('menu');
+        if (typeof subscribeLeaderboard === 'function') subscribeLeaderboard();
+      }
+    } catch(err) {
+      _authShowError('login-error', 'Unexpected error: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'LOGIN'; }
+    }
+  };
+
+  window.doRegister = async function() {
+    const username = (document.getElementById('reg-username')?.value || '').trim();
+    const email    = (document.getElementById('reg-email')?.value || '').trim();
+    const password = document.getElementById('reg-password')?.value || '';
+    const btn      = document.getElementById('register-btn');
+    _authShowError('reg-error', '');
+    _authShowError('reg-success', '');
+    if (!username) { _authShowError('reg-error', 'Username is required.'); return; }
+    if (!email)    { _authShowError('reg-error', 'Email is required.'); return; }
+    if (password.length < 6) { _authShowError('reg-error', 'Password must be at least 6 characters.'); return; }
+    if (!sbClient) { _authShowError('reg-error', 'Connection unavailable — check internet and reload.'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'Creating account…'; }
+    try {
+      const { data, error } = await sbClient.auth.signUp({ email, password });
+      if (error) {
+        _authShowError('reg-error', error.message);
+      } else {
+        await sbClient.from('profiles').upsert({
+          id: data.user.id, username,
+          player_level: 1, xp: 0, gold: 0, talent_points: 0,
+          equipped_items: {}, inventory: [], purchased_talents: [],
+          pending_chests: [], unlocked_levels: [0],
+          updated_at: new Date().toISOString()
+        });
+        if (data.session) {
+          currentUserId = data.user.id;
+          currentUsername = username;
+          if (typeof loadProfile === 'function') await loadProfile();
+          document.getElementById('auth-screen')?.classList.add('hidden');
+          if (typeof showScreen === 'function') showScreen('menu');
+          if (typeof subscribeLeaderboard === 'function') subscribeLeaderboard();
+        } else {
+          _authShowError('reg-success', 'Account created! Check your email to confirm, then log in.');
+        }
+      }
+    } catch(err) {
+      _authShowError('reg-error', 'Unexpected error: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'CREATE ACCOUNT'; }
+    }
+  };
+</script>
+
+<script>
   // ── Constants ──────────────────────────────────────────────────────────────
   const COLS = 7, ENEMY_ROWS = 7, PLAYER_ROWS = 2, MAX_CHAR_LEVEL = 6;
   const ATTACK_ROW = ENEMY_ROWS - 1;
@@ -1256,10 +1442,11 @@
       name: 'Level 1',
       subtitle: '10 Waves · Starter',
       waves: 10,
-      enemyHpBase: 30,
-      enemyHpGrowth: 1.5,
-      enemyDmgBase: 5,
-      enemyDmgGrowth: 1.2,
+      enemyHpBase: 18,
+      enemyHpGrowth: 1.12,
+      enemyDmgBase: 3,
+      enemyDmgGrowth: 1.1,
+      maxEnemiesWave1: 2,
       startingChars: [
         { row: 8, col: 2, level: 1 },
         { row: 8, col: 4, level: 1 },
@@ -1269,10 +1456,11 @@
       name: 'Level 2',
       subtitle: '12 Waves · Normal',
       waves: 12,
-      enemyHpBase: 50,
-      enemyHpGrowth: 1.6,
-      enemyDmgBase: 8,
-      enemyDmgGrowth: 1.3,
+      enemyHpBase: 30,
+      enemyHpGrowth: 1.15,
+      enemyDmgBase: 5,
+      enemyDmgGrowth: 1.12,
+      maxEnemiesWave1: 3,
       startingChars: [
         { row: 8, col: 2, level: 1 },
         { row: 8, col: 4, level: 1 },
@@ -1282,10 +1470,11 @@
       name: 'Level 3',
       subtitle: '14 Waves · Hard',
       waves: 14,
-      enemyHpBase: 80,
-      enemyHpGrowth: 1.7,
-      enemyDmgBase: 12,
-      enemyDmgGrowth: 1.35,
+      enemyHpBase: 48,
+      enemyHpGrowth: 1.18,
+      enemyDmgBase: 8,
+      enemyDmgGrowth: 1.14,
+      maxEnemiesWave1: 3,
       startingChars: [
         { row: 8, col: 1, level: 1 },
         { row: 8, col: 3, level: 1 },
@@ -1296,10 +1485,11 @@
       name: 'Level 4',
       subtitle: '15 Waves · Brutal',
       waves: 15,
-      enemyHpBase: 120,
-      enemyHpGrowth: 1.8,
-      enemyDmgBase: 18,
-      enemyDmgGrowth: 1.4,
+      enemyHpBase: 72,
+      enemyHpGrowth: 1.2,
+      enemyDmgBase: 12,
+      enemyDmgGrowth: 1.15,
+      maxEnemiesWave1: 3,
       startingChars: [
         { row: 8, col: 2, level: 1 },
         { row: 8, col: 4, level: 1 },
@@ -1309,10 +1499,11 @@
       name: 'Level 5',
       subtitle: '16 Waves · Nightmare',
       waves: 16,
-      enemyHpBase: 180,
-      enemyHpGrowth: 1.9,
-      enemyDmgBase: 25,
-      enemyDmgGrowth: 1.45,
+      enemyHpBase: 108,
+      enemyHpGrowth: 1.22,
+      enemyDmgBase: 17,
+      enemyDmgGrowth: 1.17,
+      maxEnemiesWave1: 3,
       startingChars: [
         { row: 8, col: 2, level: 1 },
         { row: 8, col: 4, level: 1 },
@@ -1321,6 +1512,7 @@
   ];
 
   // ── Item Pool ──────────────────────────────────────────────────────────────
+  // armorType: 'formation'|'critical'|'power' — 3-piece set bonuses (see computeArmorSetBonuses)
   const ITEM_POOL = [
     { id:'iron_helmet',    name:'Iron Helmet',     slot:'helmet',     tier:1, hpBonus:15,  dmgBonus:0,  rarity:'common' },
     { id:'leather_shoes',  name:'Leather Shoes',   slot:'shoes',      tier:1, hpBonus:10,  dmgBonus:0,  rarity:'common' },
@@ -1335,6 +1527,24 @@
     { id:'dragon_plate',   name:'Dragon Plate',    slot:'chestplate', tier:3, hpBonus:80,  dmgBonus:0,  rarity:'epic'   },
     { id:'blade_of_ruin',  name:'Blade of Ruin',   slot:'weapon',     tier:3, hpBonus:0,   dmgBonus:40, rarity:'epic'   },
     { id:'power_gloves',   name:'Power Gloves',    slot:'gloves',     tier:3, hpBonus:0,   dmgBonus:25, rarity:'epic'   },
+    // Formation Armor set (3 pieces: helmet, chestplate, shoes) → +2 extra L1 fighters on level start
+    { id:'formation_helm',  name:'Formation Helm',  slot:'helmet',     tier:2, hpBonus:25,  dmgBonus:0,  rarity:'rare', armorType:'formation' },
+    { id:'formation_plate', name:'Formation Plate', slot:'chestplate', tier:2, hpBonus:40,  dmgBonus:0,  rarity:'rare', armorType:'formation' },
+    { id:'formation_boots', name:'Formation Boots', slot:'shoes',      tier:2, hpBonus:18,  dmgBonus:0,  rarity:'rare', armorType:'formation' },
+    { id:'formation_band',  name:'Formation Band',  slot:'band',       tier:2, hpBonus:0,   dmgBonus:10, rarity:'rare', armorType:'formation' },
+    { id:'formation_gloves',name:'Formation Gloves',slot:'gloves',     tier:2, hpBonus:0,   dmgBonus:12, rarity:'rare', armorType:'formation' },
+    // Critical Armor set → +20% crit chance for 2x damage per hit
+    { id:'crit_helm',    name:'Critical Helm',    slot:'helmet',     tier:2, hpBonus:20,  dmgBonus:0,  rarity:'rare', armorType:'critical' },
+    { id:'crit_plate',   name:'Critical Plate',   slot:'chestplate', tier:2, hpBonus:35,  dmgBonus:0,  rarity:'rare', armorType:'critical' },
+    { id:'crit_boots',   name:'Critical Boots',   slot:'shoes',      tier:2, hpBonus:15,  dmgBonus:0,  rarity:'rare', armorType:'critical' },
+    { id:'crit_band',    name:'Critical Band',    slot:'band',       tier:2, hpBonus:0,   dmgBonus:14, rarity:'rare', armorType:'critical' },
+    { id:'crit_gloves',  name:'Critical Gloves',  slot:'gloves',     tier:2, hpBonus:0,   dmgBonus:16, rarity:'rare', armorType:'critical' },
+    // Power Armor set → all fighter damage +15%
+    { id:'power_helm',   name:'Power Helm',       slot:'helmet',     tier:3, hpBonus:40,  dmgBonus:0,  rarity:'epic', armorType:'power' },
+    { id:'power_plate',  name:'Power Plate',      slot:'chestplate', tier:3, hpBonus:65,  dmgBonus:0,  rarity:'epic', armorType:'power' },
+    { id:'power_boots',  name:'Power Boots',      slot:'shoes',      tier:3, hpBonus:28,  dmgBonus:0,  rarity:'epic', armorType:'power' },
+    { id:'power_band',   name:'Power Band',       slot:'band',       tier:3, hpBonus:0,   dmgBonus:22, rarity:'epic', armorType:'power' },
+    { id:'power_gaunt',  name:'Power Gauntlets',  slot:'gloves',     tier:3, hpBonus:0,   dmgBonus:28, rarity:'epic', armorType:'power' },
   ];
 
   // ── Talent definitions ─────────────────────────────────────────────────────
@@ -1346,11 +1556,16 @@
     { id:'salvage',        name:'Salvage',           desc:'Earn +25% more gold from level clears',       cost:2 },
     { id:'resilience',     name:'Resilience',        desc:'Regenerate 5 HP at the start of each wave',   cost:3 },
     { id:'double_rewards', name:'Double Rewards',    desc:'Post-wave orb rewards give +1 extra fighter', cost:3 },
+    { id:'swift_hands',    name:'Swift Hands',       desc:'Start each wave with 1 extra L2 fighter instead of two L1s', cost:2 },
+    { id:'phoenix',        name:'Phoenix',           desc:'Once per game, survive a killing blow with 1 HP', cost:3 },
     // Stackable talents
     { id:'attack_boost',   name:'Sharpened Blades',  desc:'+1% attack damage per rank',                 stackable:true, maxRank:10, costPerRank:1 },
     { id:'hp_regen',       name:'Vitality',           desc:'Regenerate 2 HP at wave start per rank',     stackable:true, maxRank:5,  costPerRank:1 },
     { id:'chain_lightning',name:'Storm Mastery',      desc:'Lightning chains hit +1 enemy per rank',     stackable:true, maxRank:3,  costPerRank:2 },
     { id:'plant_growth',   name:'Overgrowth',         desc:'Plants deal +10% damage per rank',           stackable:true, maxRank:5,  costPerRank:1 },
+    { id:'armor_plating',  name:'Armor Plating',      desc:'Reduce all incoming enemy damage by 5% per rank', stackable:true, maxRank:5, costPerRank:1 },
+    { id:'gold_digger',    name:'Gold Digger',        desc:'Earn +10% more gold per wave/level clear per rank', stackable:true, maxRank:5, costPerRank:1 },
+    { id:'lucky_find',     name:'Lucky Find',         desc:'+5% chance of bonus chest on level clear per rank', stackable:true, maxRank:4, costPerRank:2 },
   ];
 
   // ── XP thresholds ──────────────────────────────────────────────────────────
@@ -1398,7 +1613,7 @@
     // If logged in, try to pull from Supabase and use that as authoritative
     if (currentUserId) {
       try {
-        const { data, error } = await supabase
+        const { data, error } = await sbClient
           .from('profiles')
           .select('*')
           .eq('id', currentUserId)
@@ -1429,7 +1644,7 @@
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
     if (currentUserId) {
       const unlockedLevels = loadUnlocked();
-      supabase.from('profiles').upsert({
+      sbClient.from('profiles').upsert({
         id:                currentUserId,
         username:          currentUsername || '',
         player_level:      profile.playerLevel,
@@ -1494,6 +1709,23 @@
       if (item) bonus += item.dmgBonus;
     }
     return bonus;
+  }
+
+  // ── Armor set bonuses ──────────────────────────────────────────────────────
+  // Returns { formation: bool, critical: bool, power: bool }
+  function computeArmorSetBonuses() {
+    const counts = { formation: 0, critical: 0, power: 0 };
+    for (const slot of ['helmet','chestplate','shoes','band','gloves']) {
+      const item = getEquippedItem(slot);
+      if (item && item.armorType) {
+        counts[item.armorType] = (counts[item.armorType] || 0) + 1;
+      }
+    }
+    return {
+      formation: counts.formation >= 3,
+      critical:  counts.critical  >= 3,
+      power:     counts.power     >= 3,
+    };
   }
 
   // Migrate old flat-string purchasedTalents to {id, rank} objects (idempotent)
@@ -1575,7 +1807,7 @@
     tbodyEl.innerHTML = '';
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await sbClient
         .from('profiles')
         .select('id, username, player_level, xp, equipped_items')
         .order('player_level', { ascending: false })
@@ -1624,7 +1856,7 @@
 
   function subscribeLeaderboard() {
     if (lbChannel) return;
-    lbChannel = supabase.channel('leaderboard')
+    lbChannel = sbClient.channel('leaderboard')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
         if (activeMenuTab === 'leaderboard') refreshLeaderboard();
       })
@@ -1674,12 +1906,13 @@
       btn.disabled = true;
       btn.textContent = 'Logging in…';
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (!sbClient) { errEl.textContent = 'Connection unavailable — check your internet and reload.'; return; }
+        const { data, error } = await sbClient.auth.signInWithPassword({ email, password });
         if (error) {
           errEl.textContent = error.message;
         } else {
           // Fetch username from profiles table
-          const { data: prof } = await supabase
+          const { data: prof } = await sbClient
             .from('profiles')
             .select('username')
             .eq('id', data.user.id)
@@ -1710,12 +1943,13 @@
       btn.disabled = true;
       btn.textContent = 'Creating account…';
       try {
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (!sbClient) { errEl.textContent = 'Connection unavailable — check your internet and reload.'; return; }
+        const { data, error } = await sbClient.auth.signUp({ email, password });
         if (error) {
           errEl.textContent = error.message;
         } else {
           // Insert profile row (may already exist if email confirmation is off)
-          await supabase.from('profiles').upsert({
+          await sbClient.from('profiles').upsert({
             id: data.user.id,
             username,
             player_level: 1,
@@ -1805,10 +2039,12 @@
     document.getElementById('tab-play').classList.toggle('hidden', tab !== 'play');
     document.getElementById('tab-character').classList.toggle('hidden', tab !== 'character');
     document.getElementById('tab-talents').classList.toggle('hidden', tab !== 'talents');
+    document.getElementById('tab-shop').classList.toggle('hidden', tab !== 'shop');
     document.getElementById('tab-leaderboard').classList.toggle('hidden', tab !== 'leaderboard');
 
     if (tab === 'character')   renderCharacterTab();
     if (tab === 'talents')     renderTalentsTab();
+    if (tab === 'shop')        renderShopTab();
     if (tab === 'leaderboard') refreshLeaderboard();
   }
 
@@ -1835,6 +2071,62 @@
 
   function renderCharacterTab() {
     document.getElementById('char-gold-display').textContent = `🪙 ${profile.gold}`;
+
+    // ── Stats panel ──────────────────────────────────────────────────────────
+    let statsPanel = document.getElementById('char-stats-panel');
+    if (!statsPanel) {
+      statsPanel = document.createElement('div');
+      statsPanel.id = 'char-stats-panel';
+      const tabEl = document.getElementById('tab-character');
+      // Insert stats panel as first child of tab-character
+      tabEl.insertBefore(statsPanel, tabEl.firstChild);
+    }
+    statsPanel.className = 'stats-panel';
+
+    const baseHP   = 100;
+    const equipHP  = computeEquipmentHPBonus();
+    const iwBonus  = hasTalent('iron_will') ? 50 : 0;
+    const totalHP  = baseHP + equipHP + iwBonus;
+
+    const equipDmg = computeEquipmentDmgBonus();
+    const atkBoostRank = getTalentRank('attack_boost');
+    const berserkerPct = hasTalent('berserker') ? 10 : 0;
+    const strengthPct  = Math.round((atkBoostRank + berserkerPct));
+
+    const armorRank  = getTalentRank('armor_plating');
+    const armorReduc = armorRank * 5;
+
+    const setBonus = computeArmorSetBonuses();
+    const activeSets = [];
+    if (setBonus.formation) activeSets.push('Formation (3): +2 start fighters');
+    if (setBonus.critical)  activeSets.push('Critical (3): +20% crit chance');
+    if (setBonus.power)     activeSets.push('Power (3): +15% dmg');
+
+    let html =
+      `<div class="stats-panel-title">STATS</div>` +
+      `<div class="stat-row">` +
+        `<span class="stat-label">Health</span>` +
+        `<span class="stat-value">${totalHP}` +
+          `<span class="stat-detail">(${baseHP} base${equipHP > 0 ? ` +${equipHP} equip` : ''}${iwBonus > 0 ? ` +${iwBonus} iron will` : ''})</span>` +
+        `</span>` +
+      `</div>` +
+      `<div class="stat-row">` +
+        `<span class="stat-label">Strength</span>` +
+        `<span class="stat-value">+${equipDmg} flat dmg${strengthPct > 0 ? `, +${strengthPct}% bonus` : ''}` +
+        `</span>` +
+      `</div>` +
+      `<div class="stat-row">` +
+        `<span class="stat-label">Armor</span>` +
+        `<span class="stat-value">${armorReduc}% dmg reduction` +
+          `<span class="stat-detail">${armorRank > 0 ? `(rank ${armorRank})` : '(no armor plating)'}</span>` +
+        `</span>` +
+      `</div>`;
+
+    for (const s of activeSets) {
+      html += `<div class="set-bonus-row">Set Bonus — ${s}</div>`;
+    }
+
+    statsPanel.innerHTML = html;
 
     const armorCol  = document.getElementById('equip-col-armor');
     const attackCol = document.getElementById('equip-col-attack');
@@ -2058,6 +2350,88 @@
     renderTalentsTab();
   }
 
+  // SHOP TAB
+  const SHOP_CHESTS = [
+    {
+      id: 'bronze',
+      emoji: '🥉',
+      name: 'Bronze Chest',
+      desc: 'Common items, low-tier equipment',
+      cost: 50,
+      rarity: 'common',
+      tierClass: 'tier-bronze',
+    },
+    {
+      id: 'silver',
+      emoji: '🥈',
+      name: 'Silver Chest',
+      desc: 'Uncommon and rare items',
+      cost: 150,
+      rarity: 'rare',
+      tierClass: 'tier-silver',
+    },
+    {
+      id: 'gold',
+      emoji: '🥇',
+      name: 'Gold Chest',
+      desc: 'Rare and epic items, higher tier rewards',
+      cost: 400,
+      rarity: 'epic',
+      tierClass: 'tier-gold',
+    },
+  ];
+
+  function renderShopTab() {
+    document.getElementById('shop-gold-display').textContent = `🪙 ${profile.gold}`;
+    const container = document.getElementById('shop-chests');
+    container.innerHTML = '';
+
+    for (const chest of SHOP_CHESTS) {
+      const card = document.createElement('div');
+      card.className = `shop-chest-card ${chest.tierClass}`;
+      const canAfford = profile.gold >= chest.cost;
+
+      card.innerHTML =
+        `<div class="shop-chest-emoji">${chest.emoji}</div>` +
+        `<div class="shop-chest-info">` +
+          `<div class="shop-chest-name">${chest.name}</div>` +
+          `<div class="shop-chest-subdesc">${chest.desc}</div>` +
+          `<div class="shop-chest-cost">🪙 ${chest.cost} gold</div>` +
+        `</div>`;
+
+      const btn = document.createElement('button');
+      btn.className = 'shop-buy-btn';
+      btn.textContent = canAfford ? 'Buy' : 'Need gold';
+      btn.disabled = !canAfford;
+      btn.addEventListener('click', () => buyShopChest(chest));
+      card.appendChild(btn);
+      container.appendChild(card);
+    }
+  }
+
+  function buyShopChest(chest) {
+    if (profile.gold < chest.cost) return;
+    profile.gold -= chest.cost;
+    saveProfile();
+    // Open the chest directly (bypass pendingChests; same loot logic as openEquipmentChest)
+    openShopChestDirect(chest.rarity);
+  }
+
+  function openShopChestDirect(rarity) {
+    const pool = ITEM_POOL.filter(it => {
+      if (rarity === 'common') return it.rarity === 'common';
+      if (rarity === 'rare')   return it.rarity === 'rare';
+      if (rarity === 'epic')   return true;
+      return false;
+    });
+    const count = Math.random() < 0.4 ? 2 : 1;
+    const shuffled = shuffleArr([...pool]);
+    const drops = shuffled.slice(0, Math.min(count, shuffled.length));
+    for (const item of drops) profile.inventory.push(item.id);
+    saveProfile();
+    showItemDropOverlay(drops, rarity, () => { renderShopTab(); });
+  }
+
   function refreshMenuButtons() {
     const unlocked = loadUnlocked();
     const selectBtn = document.getElementById('menu-select-btn');
@@ -2102,6 +2476,7 @@
   let playerHP, playerMaxHP, wave, score, gameOver, turnPhase;
   let enemies, enemyIdCounter, playerChars, charIdCounter, dragSource;
   let pendingOrbs = [];
+  let phoenixUsed = false;
   let orbsPhase = false;
   let upgrades = { statBoost: false, icePending: 0 };
   let plants = []; // plant markers placed by plant ability: { row, col }
@@ -2218,6 +2593,7 @@
     dragSource = null;
     pendingOrbs = [];
     orbsPhase = false;
+    phoenixUsed = false;
     upgrades = { statBoost: false, icePending: 0 };
     plants = [];
     updateUpgradeDisplay();
@@ -2245,6 +2621,37 @@
       }
     }
 
+    // Swift Hands talent: spawn one extra L2 fighter instead of two L1s
+    if (hasTalent('swift_hands')) {
+      const all2 = [];
+      for (let r = ENEMY_ROWS; r < ENEMY_ROWS + PLAYER_ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          all2.push({ row: r, col: c });
+      const taken2 = new Set(playerChars.map(ch => `${ch.row},${ch.col}`));
+      const empty2 = all2.filter(p => !taken2.has(`${p.row},${p.col}`));
+      if (empty2.length) {
+        const pick2 = empty2[Math.floor(Math.random() * empty2.length)];
+        addPlayerChar(pick2.row, pick2.col, 2);
+      }
+    }
+
+    // Formation Armor set bonus: +2 extra L1 fighters on level start
+    const armorSets = computeArmorSetBonuses();
+    if (armorSets.formation) {
+      for (let bonus = 0; bonus < 2; bonus++) {
+        const allBonus = [];
+        for (let r = ENEMY_ROWS; r < ENEMY_ROWS + PLAYER_ROWS; r++)
+          for (let c = 0; c < COLS; c++)
+            allBonus.push({ row: r, col: c });
+        const takenBonus = new Set(playerChars.map(ch => `${ch.row},${ch.col}`));
+        const emptyBonus = allBonus.filter(p => !takenBonus.has(`${p.row},${p.col}`));
+        if (emptyBonus.length) {
+          const pickBonus = emptyBonus[Math.floor(Math.random() * emptyBonus.length)];
+          addPlayerChar(pickBonus.row, pickBonus.col, 1);
+        }
+      }
+    }
+
     spawnWave(1);
     renderAll();
     document.getElementById('overlay').classList.add('hidden');
@@ -2255,10 +2662,14 @@
 
   // ── Wave spawning ─────────────────────────────────────────────────────────
   function spawnWave(wNum) {
-    const def     = currentLevelDef;
-    const count   = 3 + (wNum - 1) * 2;
-    const hp      = Math.round(def.enemyHpBase  * Math.pow(def.enemyHpGrowth,  wNum - 1));
-    const damage  = Math.round(def.enemyDmgBase * Math.pow(def.enemyDmgGrowth, wNum - 1));
+    const def    = currentLevelDef;
+    let count    = 3 + (wNum - 1) * 2;
+    // Cap wave 1 enemies using per-level maxEnemiesWave1
+    if (wNum === 1 && def.maxEnemiesWave1 !== undefined) {
+      count = Math.min(count, def.maxEnemiesWave1);
+    }
+    const hp     = Math.round(def.enemyHpBase  * Math.pow(def.enemyHpGrowth,  wNum - 1));
+    const damage = Math.round(def.enemyDmgBase * Math.pow(def.enemyDmgGrowth, wNum - 1));
 
     const positions = [];
     for (let r = 0; r < Math.min(4, ENEMY_ROWS); r++)
@@ -2390,6 +2801,13 @@
       // Sharpened Blades talent: +1% per rank
       const attackBoostRank = getTalentRank('attack_boost');
       if (attackBoostRank > 0) dmg = Math.floor(dmg * (1 + attackBoostRank * 0.01));
+
+      // Power Armor set: all fighter damage +15%
+      const setBonus = computeArmorSetBonuses();
+      if (setBonus.power) dmg = Math.floor(dmg * 1.15);
+
+      // Critical Armor set: 20% chance to deal 2x damage (per column attack)
+      if (setBonus.critical && Math.random() < 0.20) dmg = dmg * 2;
 
       // Frontmost enemy in same column, else nearest in adjacent columns
       let target = enemies.filter(e => e.col === col).sort((a, b) => b.row - a.row)[0];
@@ -2561,9 +2979,20 @@
     const freshArrivals = atFront.filter(e => e.justArrived);
     const veterans     = atFront.filter(e => !e.justArrived);
     freshArrivals.forEach(e => { e.justArrived = false; });
-    const dmg = veterans.reduce((s, e) => s + e.damage, 0);
+    let dmg = veterans.reduce((s, e) => s + e.damage, 0);
     if (dmg > 0) {
-      playerHP = Math.max(0, playerHP - dmg);
+      // Armor Plating talent: reduce incoming damage by 5% per rank
+      const armorRank = getTalentRank('armor_plating');
+      if (armorRank > 0) dmg = Math.max(1, Math.floor(dmg * (1 - armorRank * 0.05)));
+
+      const newHP = playerHP - dmg;
+      // Phoenix talent: survive a killing blow with 1 HP (once per game)
+      if (newHP <= 0 && hasTalent('phoenix') && !phoenixUsed) {
+        phoenixUsed = true;
+        playerHP = 1;
+      } else {
+        playerHP = Math.max(0, newHP);
+      }
       const veteranIds = new Set(veterans.map(v => v.id));
       enemies = enemies.filter(e => !veteranIds.has(e.id));
     }
@@ -2668,6 +3097,13 @@
       const leveled = grantXP(waveXP);
       if (leveled && screen === 'game') showLevelUpToast();
 
+      // Grant small gold for wave clear; Gold Digger talent gives bonus
+      let waveGold = wave * 3;
+      const waveGoldDiggerRank = getTalentRank('gold_digger');
+      if (waveGoldDiggerRank > 0) waveGold = Math.floor(waveGold * (1 + waveGoldDiggerRank * 0.1));
+      profile.gold += waveGold;
+      saveProfile();
+
       // Resilience talent: regen 5 HP at start of next wave
       if (hasTalent('resilience')) {
         playerHP = Math.min(playerMaxHP, playerHP + 5);
@@ -2735,6 +3171,13 @@
       const waveXP = wave * 10;
       const leveled = grantXP(waveXP);
       if (leveled && screen === 'game') showLevelUpToast();
+
+      // Grant small gold for wave clear; Gold Digger talent gives bonus
+      let waveGold2 = wave * 3;
+      const waveGoldDiggerRank2 = getTalentRank('gold_digger');
+      if (waveGoldDiggerRank2 > 0) waveGold2 = Math.floor(waveGold2 * (1 + waveGoldDiggerRank2 * 0.1));
+      profile.gold += waveGold2;
+      saveProfile();
 
       if (hasTalent('resilience')) {
         playerHP = Math.min(playerMaxHP, playerHP + 5);
@@ -3024,11 +3467,20 @@
   // ── End conditions ────────────────────────────────────────────────────────
   function triggerGameOver() {
     gameOver = true;
+
+    // Consolation rewards: 20 gold + 15 XP
+    const consolationGold = 20;
+    const consolationXP   = 15;
+    profile.gold += consolationGold;
+    const leveled = grantXP(consolationXP);
+    if (leveled) showLevelUpToast();
+
     document.getElementById('overlay-title').style.color = '#e94560';
     document.getElementById('overlay-title').textContent = 'GAME OVER';
     document.getElementById('overlay-sub').textContent =
       `Wave ${wave} / ${currentLevelDef.waves} — ${score} enemies defeated`;
-    document.getElementById('overlay-reward').textContent = '';
+    document.getElementById('overlay-reward').textContent =
+      `Consolation: +${consolationXP} XP · 🪙 +${consolationGold} Gold`;
 
     const btn1 = document.getElementById('overlay-btn');
     const btn2 = document.getElementById('overlay-btn2');
@@ -3055,15 +3507,25 @@
     const leveled = grantXP(levelXP);
     if (leveled) showLevelUpToast();
 
-    // Grant gold
-    let goldEarned = (currentLevel + 1) * 50;
+    // Grant gold: base 100 + (levelIndex × 50)
+    let goldEarned = 100 + currentLevel * 50;
     if (hasTalent('salvage')) goldEarned = Math.floor(goldEarned * 1.25);
+    // Gold Digger talent: +10% per rank
+    const goldDiggerRank = getTalentRank('gold_digger');
+    if (goldDiggerRank > 0) goldEarned = Math.floor(goldEarned * (1 + goldDiggerRank * 0.1));
     profile.gold += goldEarned;
 
-    // Grant a chest based on level
+    // Grant a chest based on level; Lucky Find talent can upgrade tier
     let chestRarity = 'common';
     if (currentLevel >= 4)      chestRarity = 'epic';
     else if (currentLevel >= 2) chestRarity = 'rare';
+    // Lucky Find: 5% per rank chance to upgrade chest tier
+    const luckyRank = getTalentRank('lucky_find');
+    const luckyChance = luckyRank * 0.05;
+    if (luckyChance > 0 && Math.random() < luckyChance) {
+      if (chestRarity === 'common') chestRarity = 'rare';
+      else if (chestRarity === 'rare') chestRarity = 'epic';
+    }
     profile.pendingChests.push(chestRarity);
 
     saveProfile();
@@ -3125,12 +3587,12 @@
 
   // Logout
   document.getElementById('logout-btn').addEventListener('click', async () => {
-    await supabase.auth.signOut();
+    await sbClient.auth.signOut();
     currentUserId = null;
     currentUsername = null;
     profile = defaultProfile();
     localStorage.removeItem(PROFILE_KEY);
-    if (lbChannel) { supabase.removeChannel(lbChannel); lbChannel = null; }
+    if (lbChannel) { sbClient.removeChannel(lbChannel); lbChannel = null; }
     showAuthScreen();
   });
 
@@ -3149,10 +3611,11 @@
   // Check for existing session
   (async () => {
     try {
-      const { data } = await supabase.auth.getSession();
+      if (!sbClient) { showAuthScreen(); return; }
+      const { data } = await sbClient.auth.getSession();
       if (data.session) {
         const userId = data.session.user.id;
-        const { data: prof } = await supabase
+        const { data: prof } = await sbClient
           .from('profiles')
           .select('username')
           .eq('id', userId)
