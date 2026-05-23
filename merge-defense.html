@@ -2733,9 +2733,15 @@
       if (!el) continue;
       const cfg = LEVEL_CONFIG[ch.level - 1];
       const abilities = getAbilities(ch);
-      const abilityEmojis = abilities.map(a => a === 'fire' ? '🔥' : a === 'lightning' ? '⚡' : a === 'plants' ? '🌿' : '').filter(Boolean);
-      const abilityBadge = abilityEmojis.length
-        ? `<div class="ability-badge">${abilityEmojis.join('')}</div>`
+      // Count stacks of each ability type and show multiplier if > 1
+      const abilityCounts = {};
+      for (const a of abilities) abilityCounts[a] = (abilityCounts[a] || 0) + 1;
+      const abilityBadgeParts = [];
+      if (abilityCounts['fire'])      abilityBadgeParts.push('🔥' + (abilityCounts['fire']      > 1 ? '×' + abilityCounts['fire']      : ''));
+      if (abilityCounts['lightning']) abilityBadgeParts.push('⚡' + (abilityCounts['lightning'] > 1 ? '×' + abilityCounts['lightning'] : ''));
+      if (abilityCounts['plants'])    abilityBadgeParts.push('🌿' + (abilityCounts['plants']    > 1 ? '×' + abilityCounts['plants']    : ''));
+      const abilityBadge = abilityBadgeParts.length
+        ? `<div class="ability-badge">${abilityBadgeParts.join(' ')}</div>`
         : '';
       el.innerHTML =
         `<div class="char-emoji">${cfg.emoji}</div>` +
@@ -2788,9 +2794,13 @@
       // Equipment flat damage bonus
       dmg += equipmentDmgBonus;
 
-      // Fire ability: 30% damage boost for column
-      const hasFireChar = charsHere.some(c => getAbilities(c).includes('fire'));
-      if (hasFireChar) dmg = Math.floor(dmg * 1.3);
+      // Fire ability: stacking damage boost — 1×fire = ×1.3, 2× = ×1.45, 3× = ×1.6
+      const fireStacks = charsHere.reduce((s, c) => s + getAbilities(c).filter(a => a === 'fire').length, 0);
+      const hasFireChar = fireStacks > 0;
+      if (hasFireChar) {
+        const fireMulti = 1.3 + (fireStacks - 1) * 0.15;
+        dmg = Math.floor(dmg * fireMulti);
+      }
 
       // Power Surge upgrade: +25% global damage
       if (upgrades.statBoost) dmg = Math.floor(dmg * 1.25);
@@ -2831,25 +2841,31 @@
           setTimeout(() => { gapEl.textContent = ''; gapEl.classList.remove('proj-fly'); }, 300);
         }
 
-        // Fire ability: apply burn
+        // Fire ability: apply burn; burn DoT scales with stack count
         if (hasFireChar) {
           target.burning = true;
-          target.burnDamage = Math.floor(dmg * 0.4);
+          target.burnDamage = Math.floor(dmg * 0.4) * fireStacks;
         }
 
-        // Lightning ability: chain damage to adjacent enemies, with visible overlay flash
-        const hasLightningChar = charsHere.some(c => getAbilities(c).includes('lightning'));
+        // Lightning ability: chain damage to all 8 adjacent cells (including diagonals)
+        // Stacking: each additional lightning copy adds +1 chain target and scales chain damage
+        const lightningStacks = charsHere.reduce((s, c) => s + getAbilities(c).filter(a => a === 'lightning').length, 0);
+        const hasLightningChar = lightningStacks > 0;
         if (hasLightningChar) {
           const baseDmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
-          const chainDmg = Math.floor(baseDmg * 0.5);
-          // Storm Mastery talent: chain to 1 + rank additional targets
-          const chainCount = 1 + getTalentRank('chain_lightning');
-          const adjacent = enemies.filter(e =>
-            e.id !== target.id && (
-              (e.row === target.row && (e.col === target.col - 1 || e.col === target.col + 1)) ||
-              (e.col === target.col && (e.row === target.row - 1 || e.row === target.row + 1))
-            )
-          );
+          // Chain damage scales with stacks: 0.5 base + 0.1 per extra stack
+          const chainDmgMulti = 0.5 + (lightningStacks - 1) * 0.1;
+          const chainDmg = Math.floor(baseDmg * chainDmgMulti);
+          // Total chain targets = lightning stacks + Storm Mastery rank
+          const chainCount = lightningStacks + getTalentRank('chain_lightning');
+          // 8-directional adjacency (including diagonals)
+          const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+          const adjacent = enemies.filter(e => {
+            if (e.id === target.id) return false;
+            const dr = e.row - target.row;
+            const dc = e.col - target.col;
+            return DIRS.some(([dr2, dc2]) => dr === dr2 && dc === dc2);
+          });
           if (adjacent.length) {
             // Sort by lowest HP first so chains prioritize weakest
             const sorted = adjacent.slice().sort((a, b) => a.hp - b.hp);
@@ -2889,11 +2905,14 @@
           }
         }
 
-        // Plants ability: place 2-3 plant markers on target cell and nearby cells
-        const hasPlantsChar = charsHere.some(c => getAbilities(c).includes('plants'));
+        // Plants ability: place plant markers on target cell and nearby cells
+        // Stacking: each additional plants copy increases spawn range and damage
+        const plantStacks = charsHere.reduce((s, c) => s + getAbilities(c).filter(a => a === 'plants').length, 0);
+        const hasPlantsChar = plantStacks > 0;
         if (hasPlantsChar) {
-          // Determine plant spawn count (2 to 3)
-          const plantCount = Math.random() < 0.5 ? 3 : 2;
+          // 1× plants: 2–3 markers. 2× plants: 3–4. 3× plants: 4–5
+          const plantMinCount = 1 + plantStacks;
+          const plantCount = plantMinCount + (Math.random() < 0.5 ? 1 : 0);
           // Candidate cells: target cell first, then adjacent cells in same row
           const plantCandidates = [
             { row: target.row, col: target.col },
@@ -2906,7 +2925,7 @@
             if (placed >= plantCount) break;
             const alreadyPlanted = plants.some(p => p.row === candidate.row && p.col === candidate.col);
             if (!alreadyPlanted) {
-              plants.push({ row: candidate.row, col: candidate.col });
+              plants.push({ row: candidate.row, col: candidate.col, stacks: plantStacks });
               placed++;
             }
           }
@@ -3018,9 +3037,12 @@
         plantTarget = enemies.find(e => e.row === r && e.col === p.col) || null;
       }
       if (plantTarget) {
-        // Plant deals moderate damage; Overgrowth talent adds +10% per rank
+        // Plant deals moderate damage scaled by stacks; Overgrowth talent adds +10% per rank
+        // Base 36 dmg (LEVEL_CONFIG[2].damage * 0.6). Each additional stack adds +18 dmg flat.
         const plantGrowthRank = getTalentRank('plant_growth');
-        const plantDmg = Math.floor(LEVEL_CONFIG[2].damage * 0.6 * (1 + plantGrowthRank * 0.1)); // base 36 dmg
+        const stacks = p.stacks || 1;
+        const plantBaseDmg = Math.floor(LEVEL_CONFIG[2].damage * 0.6) + (stacks - 1) * 18; // 36 + 18 per extra stack
+        const plantDmg = Math.floor(plantBaseDmg * (1 + plantGrowthRank * 0.1));
         plantTarget.hp -= plantDmg;
         // Flash the hit enemy cell
         const hitEl = getCell(plantTarget.row, plantTarget.col);
@@ -3228,21 +3250,49 @@
   }
 
   const CHEST_OPTIONS = [
-    { id: 'stat_boost',   emoji: '⚡', label: 'Power Surge',      desc: 'All fighters deal +25% damage',          type: 'upgrade', borderColor: '#ffd54f' },
-    { id: 'enemy_weaken', emoji: '💀', label: 'Weaken Foes',      desc: 'All enemies lose 20% HP now',            type: 'upgrade', borderColor: '#ffd54f' },
-    { id: 'ice_slow',     emoji: '❄️', label: 'Glacial Trap',     desc: 'Next turn: 2 enemies are frozen',        type: 'upgrade', borderColor: '#4fc3f7' },
-    { id: 'heal',         emoji: '💚', label: 'Field Medic',      desc: 'Restore 20 HP',                          type: 'upgrade', borderColor: '#57c264' },
-    { id: 'fire',         emoji: '🔥', label: 'Fire Strike',      desc: 'A fighter gains Fire — burns on hit',    type: 'ability', borderColor: '#e94560' },
-    { id: 'lightning',    emoji: '⚡', label: 'Chain Lightning',  desc: 'A fighter gains Lightning — chains hit', type: 'ability', borderColor: '#4fc3f7' },
-    { id: 'plants',       emoji: '🌿', label: 'Thornshot',        desc: 'A fighter gains Plants — pierces behind',type: 'ability', borderColor: '#57c264' },
+    { id: 'stat_boost',     emoji: '⚡', label: 'Power Surge',      desc: 'All fighters deal +25% damage this run',       type: 'upgrade', borderColor: '#ffd54f' },
+    { id: 'column_boost',   emoji: '🌟', label: 'Column Power',     desc: 'All fighters in a random column gain +1 level', type: 'upgrade', borderColor: '#ffd54f' },
+    { id: 'reinforcements', emoji: '🛡️', label: 'Reinforcements',   desc: 'Spawn 2 extra L1 fighters in empty cells',      type: 'upgrade', borderColor: '#a8dadc' },
+    { id: 'ice_slow',       emoji: '❄️', label: 'Glacial Trap',     desc: 'Next turn: 2 enemies are frozen',               type: 'upgrade', borderColor: '#4fc3f7' },
+    { id: 'heal',           emoji: '💚', label: 'Shield Wall',      desc: 'Restore 20 HP',                                 type: 'upgrade', borderColor: '#57c264' },
+    { id: 'fire',           emoji: '🔥', label: 'Fire Strike',      desc: 'A random fighter gains Fire — burns on hit',    type: 'ability', borderColor: '#e94560' },
+    { id: 'lightning',      emoji: '⚡', label: 'Chain Lightning',  desc: 'A random fighter gains Lightning — chains hit', type: 'ability', borderColor: '#4fc3f7' },
+    { id: 'plants',         emoji: '🌿', label: 'Thornshot',        desc: 'A random fighter gains Plants — pierces ahead', type: 'ability', borderColor: '#57c264' },
   ];
 
   function applyChestOption(opt) {
     if (opt.id === 'stat_boost') {
       upgrades.statBoost = true;
-    } else if (opt.id === 'enemy_weaken') {
-      for (const e of enemies) e.hp = Math.max(1, Math.floor(e.hp * 0.8));
-      renderEnemyZone();
+    } else if (opt.id === 'column_boost') {
+      // Grant +1 level to all fighters in a random occupied column (capped at MAX_CHAR_LEVEL)
+      const occupiedCols = [...new Set(playerChars.map(c => c.col))];
+      if (occupiedCols.length) {
+        const col = occupiedCols[Math.floor(Math.random() * occupiedCols.length)];
+        const boosted = playerChars.filter(c => c.col === col);
+        for (const ch of boosted) ch.level = Math.min(ch.level + 1, MAX_CHAR_LEVEL);
+        renderPlayerZone();
+        // Pop animation on boosted cells
+        for (const ch of boosted) {
+          const el = getCell(ch.row, ch.col);
+          if (el) { el.classList.add('merge-pop'); setTimeout(() => el.classList.remove('merge-pop'), 450); }
+        }
+      }
+    } else if (opt.id === 'reinforcements') {
+      // Spawn 2 extra L1 fighters in random empty player cells
+      const all = [];
+      for (let r = ENEMY_ROWS; r < ENEMY_ROWS + PLAYER_ROWS; r++)
+        for (let c = 0; c < COLS; c++)
+          all.push({ row: r, col: c });
+      const spawned = [];
+      for (let i = 0; i < 2; i++) {
+        const taken = new Set(playerChars.map(ch => `${ch.row},${ch.col}`).concat(spawned.map(p => `${p.row},${p.col}`)));
+        const empty = all.filter(p => !taken.has(`${p.row},${p.col}`));
+        if (!empty.length) break;
+        const pick = empty[Math.floor(Math.random() * empty.length)];
+        addPlayerChar(pick.row, pick.col, 1);
+        spawned.push(pick);
+      }
+      renderPlayerZone();
     } else if (opt.id === 'ice_slow') {
       upgrades.icePending = 2;
     } else if (opt.id === 'heal') {
@@ -3250,16 +3300,15 @@
       updateHUD();
     } else if (opt.id === 'fire' || opt.id === 'lightning' || opt.id === 'plants') {
       if (!playerChars.length) return;
-      const maxLv = Math.max(...playerChars.map(c => c.level));
-      const candidates = playerChars.filter(c => c.level === maxLv);
-      const ch = candidates[Math.floor(Math.random() * candidates.length)];
+      // Assign to a completely random fighter
+      const ch = playerChars[Math.floor(Math.random() * playerChars.length)];
       // Ensure abilities array exists (migrate old ability field)
       if (!Array.isArray(ch.abilities)) {
         ch.abilities = ch.ability ? [ch.ability] : [];
         delete ch.ability;
       }
-      // Only add if not already present and under the 3-ability cap
-      if (!ch.abilities.includes(opt.id) && ch.abilities.length < 3) {
+      // Allow duplicate abilities for stacking — only enforce the max-3 cap
+      if (ch.abilities.length < 3) {
         ch.abilities.push(opt.id);
       }
       renderPlayerZone(); // show the ability badge immediately
@@ -3432,10 +3481,10 @@
     } else if (dst.level === src.level) {
       // Same-level merge — does NOT end the turn
       const newLv = Math.min(src.level + 1, MAX_CHAR_LEVEL);
-      // Combine abilities from both merged characters (deduplicate, cap at 3)
+      // Combine abilities from both merged characters (allow duplicates for stacking, cap at 3)
       const srcAbilities = getAbilities(src);
       const dstAbilities = getAbilities(dst);
-      const combinedAbilities = [...new Set([...dstAbilities, ...srcAbilities])].slice(0, 3);
+      const combinedAbilities = [...dstAbilities, ...srcAbilities].slice(0, 3);
       playerChars = playerChars.filter(c => c.id !== src.id && c.id !== dst.id);
       addPlayerChar(targetRow, targetCol, newLv);
       // Apply combined abilities to the newly created char
