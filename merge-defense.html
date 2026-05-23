@@ -2191,12 +2191,14 @@
     e.preventDefault();
     const src = dragSource ? playerChars.find(c => c.id === dragSource.id) : null;
     const dst = playerChars.find(c => c.row === row && c.col === col);
-    const valid = !dst || (src && dst.id !== src.id && dst.level === src.level);
-    e.dataTransfer.dropEffect = valid ? 'move' : 'none';
+    // All drops onto player cells are now valid: empty = move+end-turn,
+    // same-level = merge, different-level = swap.
+    const isSelf = src && dst && dst.id === src.id;
+    e.dataTransfer.dropEffect = isSelf ? 'none' : 'move';
     const el = getCell(row, col);
     if (el) {
       el.classList.remove('drag-over', 'drag-invalid');
-      el.classList.add(valid ? 'drag-over' : 'drag-invalid');
+      if (!isSelf) el.classList.add('drag-over');
     }
   }
 
@@ -2217,11 +2219,18 @@
     const dst = playerChars.find(c => c.row === targetRow && c.col === targetCol);
 
     if (!dst) {
+      // Move to empty cell — ends the turn
       src.row = targetRow;
       src.col = targetCol;
       dragSource = null;
       renderPlayerZone();
-    } else if (dst.id !== src.id && dst.level === src.level) {
+      handleEndTurn();
+    } else if (dst.id === src.id) {
+      // Dropped onto self — do nothing
+      dragSource = null;
+      renderPlayerZone();
+    } else if (dst.level === src.level) {
+      // Same-level merge — does NOT end the turn
       const newLv = Math.min(src.level + 1, MAX_CHAR_LEVEL);
       playerChars = playerChars.filter(c => c.id !== src.id && c.id !== dst.id);
       addPlayerChar(targetRow, targetCol, newLv);
@@ -2230,6 +2239,10 @@
       const el = getCell(targetRow, targetCol);
       if (el) { el.classList.add('merge-pop'); setTimeout(() => el.classList.remove('merge-pop'), 450); }
     } else {
+      // Different-level swap — does NOT end the turn
+      const srcRow = src.row; const srcCol = src.col;
+      src.row = targetRow; src.col = targetCol;
+      dst.row = srcRow;    dst.col = srcCol;
       dragSource = null;
       renderPlayerZone();
     }
