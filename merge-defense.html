@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Merge Defense</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     .hidden { display: none !important; }
@@ -834,9 +835,219 @@
     .plant-attack-flash {
       animation: plant-attack-anim 0.3s ease-out forwards;
     }
+
+    /* ── Auth Screen ── */
+    #auth-screen {
+      position: fixed;
+      inset: 0;
+      background: #1a1a2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 300;
+      padding: 20px;
+    }
+    #auth-screen.hidden { display: none !important; }
+
+    #auth-title {
+      font-size: 2.4rem;
+      font-weight: bold;
+      letter-spacing: 5px;
+      color: #e94560;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+    #auth-subtitle {
+      font-size: 0.9rem;
+      color: #a8dadc;
+      letter-spacing: 1px;
+      margin-bottom: 24px;
+    }
+
+    #auth-box {
+      background: #16213e;
+      border: 2px solid #0f3460;
+      border-radius: 14px;
+      width: 360px;
+      max-width: 96vw;
+      overflow: hidden;
+    }
+
+    #auth-tab-bar {
+      display: flex;
+      border-bottom: 2px solid #0f3460;
+    }
+    .auth-tab {
+      flex: 1;
+      padding: 13px 0;
+      text-align: center;
+      font-size: 0.82rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      color: #666;
+      cursor: pointer;
+      text-transform: uppercase;
+      border-bottom: 2px solid transparent;
+      transition: color 0.15s, border-color 0.15s;
+      margin-bottom: -2px;
+    }
+    .auth-tab:hover { color: #aaa; }
+    .auth-tab.active { color: #fff; border-bottom: 2px solid #e94560; }
+
+    #auth-forms { padding: 24px; }
+
+    .auth-form { display: flex; flex-direction: column; gap: 14px; }
+    .auth-form.hidden { display: none !important; }
+
+    .auth-input {
+      background: #0f3460;
+      border: 2px solid #1e3a6e;
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #eee;
+      font-size: 0.9rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      width: 100%;
+    }
+    .auth-input:focus { border-color: #a8dadc; }
+    .auth-input::placeholder { color: #555; }
+
+    .auth-btn {
+      background: #e94560;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 11px 0;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: background 0.15s;
+      width: 100%;
+    }
+    .auth-btn:hover:not(:disabled) { background: #c73652; }
+    .auth-btn:disabled { background: #333; cursor: not-allowed; }
+
+    .auth-error {
+      font-size: 0.78rem;
+      color: #e94560;
+      min-height: 18px;
+      text-align: center;
+    }
+    .auth-success {
+      font-size: 0.78rem;
+      color: #57c264;
+      min-height: 18px;
+      text-align: center;
+    }
+
+    /* Logout button in menu */
+    #logout-btn {
+      position: absolute;
+      top: 14px;
+      right: 18px;
+      background: transparent;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #666;
+      font-size: 0.7rem;
+      padding: 4px 10px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: color 0.15s, border-color 0.15s;
+      font-weight: normal;
+    }
+    #logout-btn:hover:not(:disabled) { color: #e94560; border-color: #e94560; background: transparent; transform: none; }
+
+    /* ── Leaderboard tab ── */
+    #tab-leaderboard { display: flex; flex-direction: column; gap: 14px; }
+    .lb-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .lb-title { font-size: 1rem; font-weight: bold; color: #a8dadc; letter-spacing: 2px; }
+    #lb-refresh-btn {
+      font-size: 0.7rem;
+      padding: 4px 12px;
+      border-radius: 6px;
+      background: #0f3460;
+      border: 1px solid #a8dadc;
+      color: #a8dadc;
+      cursor: pointer;
+      font-weight: bold;
+      letter-spacing: 0;
+      transition: background 0.15s;
+    }
+    #lb-refresh-btn:hover:not(:disabled) { background: #163a6e; transform: none; }
+
+    #lb-loading { font-size: 0.82rem; color: #555; text-align: center; padding: 20px 0; }
+    #lb-error   { font-size: 0.82rem; color: #e94560; text-align: center; padding: 20px 0; }
+
+    #lb-table-wrap { overflow-x: auto; }
+    #lb-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+    }
+    #lb-table th {
+      text-align: left;
+      padding: 6px 10px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-size: 0.65rem;
+      border-bottom: 1px solid #0f3460;
+    }
+    #lb-table td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #0f3460;
+    }
+    #lb-table tr:last-child td { border-bottom: none; }
+    #lb-table tr.lb-me td { background: rgba(233,69,96,0.08); color: #fff; }
+    #lb-table tr.lb-me td:first-child { color: #e94560; font-weight: bold; }
+    .lb-rank { color: #888; font-weight: bold; min-width: 28px; }
+    .lb-username { font-weight: bold; color: #a8dadc; }
+    .lb-level { color: #ffd54f; }
+    .lb-xp { color: #888; }
+    .lb-weapon { font-size: 1rem; }
   </style>
 </head>
 <body>
+
+<!-- Auth Screen -->
+<div id="auth-screen">
+  <div id="auth-title">Merge Defense</div>
+  <div id="auth-subtitle">Sign in to save your progress and compete globally</div>
+
+  <div id="auth-box">
+    <div id="auth-tab-bar">
+      <div class="auth-tab active" data-auth-tab="login">LOGIN</div>
+      <div class="auth-tab" data-auth-tab="register">REGISTER</div>
+    </div>
+    <div id="auth-forms">
+      <!-- Login form -->
+      <form id="login-form" class="auth-form" autocomplete="on">
+        <input class="auth-input" type="email" id="login-email" placeholder="Email" autocomplete="email" required>
+        <input class="auth-input" type="password" id="login-password" placeholder="Password" autocomplete="current-password" required>
+        <div class="auth-error" id="login-error"></div>
+        <button class="auth-btn" type="submit" id="login-btn">LOGIN</button>
+      </form>
+      <!-- Register form -->
+      <form id="register-form" class="auth-form hidden" autocomplete="on">
+        <input class="auth-input" type="text" id="reg-username" placeholder="Username" autocomplete="username" required>
+        <input class="auth-input" type="email" id="reg-email" placeholder="Email" autocomplete="email" required>
+        <input class="auth-input" type="password" id="reg-password" placeholder="Password (min 6 chars)" autocomplete="new-password" required>
+        <div class="auth-error" id="reg-error"></div>
+        <div class="auth-success" id="reg-success"></div>
+        <button class="auth-btn" type="submit" id="register-btn">CREATE ACCOUNT</button>
+      </form>
+    </div>
+  </div>
+</div>
 
 <h1>Merge Defense</h1>
 
@@ -891,7 +1102,8 @@
 </div>
 
 <!-- Main Menu overlay -->
-<div id="menu-overlay">
+<div id="menu-overlay" style="position:relative;">
+  <button id="logout-btn">LOGOUT</button>
   <div id="menu-title">Merge Defense</div>
   <div id="menu-subtitle">A wave-based merging tower defense</div>
 
@@ -905,6 +1117,7 @@
     <div class="menu-tab active" data-tab="play">PLAY</div>
     <div class="menu-tab" data-tab="character">CHARACTER</div>
     <div class="menu-tab" data-tab="talents">TALENTS</div>
+    <div class="menu-tab" data-tab="leaderboard">RANKS</div>
   </div>
 
   <!-- Tab content -->
@@ -958,6 +1171,30 @@
       <div class="talent-grid" id="talent-grid"></div>
     </div>
 
+    <!-- LEADERBOARD tab -->
+    <div id="tab-leaderboard" class="hidden">
+      <div class="lb-header">
+        <div class="lb-title">GLOBAL RANKS</div>
+        <button id="lb-refresh-btn">↻ Refresh</button>
+      </div>
+      <div id="lb-loading" class="hidden">Loading…</div>
+      <div id="lb-error" class="hidden"></div>
+      <div id="lb-table-wrap">
+        <table id="lb-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Player</th>
+              <th>Level</th>
+              <th>XP</th>
+              <th>Weapon</th>
+            </tr>
+          </thead>
+          <tbody id="lb-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </div>
 
@@ -988,6 +1225,16 @@
 </div>
 
 <script>
+  // ── Supabase client ────────────────────────────────────────────────────────
+  const supabase = window.supabase.createClient(
+    'https://bomqdsizgmgpaxrsfwsv.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJvbXFkc2l6Z21ncGF4cnNmd3N2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk1MjU5MjcsImV4cCI6MjA5NTEwMTkyN30.8eyYVdADcMT96T1-vxksLEqlW4evKvJAgd0NMCJd1Xk'
+  );
+
+  // Logged-in user's Supabase UUID — set after auth
+  let currentUserId = null;
+  let currentUsername = null;
+
   // ── Constants ──────────────────────────────────────────────────────────────
   const COLS = 7, ENEMY_ROWS = 7, PLAYER_ROWS = 2, MAX_CHAR_LEVEL = 6;
   const ATTACK_ROW = ENEMY_ROWS - 1;
@@ -1138,7 +1385,8 @@
 
   let profile = defaultProfile();
 
-  function loadProfile() {
+  async function loadProfile() {
+    // Always start with localStorage as a fast baseline
     try {
       const raw = localStorage.getItem(PROFILE_KEY);
       if (raw) {
@@ -1146,10 +1394,56 @@
         profile = Object.assign(defaultProfile(), parsed);
       }
     } catch (_) {}
+
+    // If logged in, try to pull from Supabase and use that as authoritative
+    if (currentUserId) {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentUserId)
+          .single();
+        if (!error && data) {
+          profile = Object.assign(defaultProfile(), {
+            playerLevel:      data.player_level     ?? profile.playerLevel,
+            xp:               data.xp               ?? profile.xp,
+            talentPoints:     data.talent_points    ?? profile.talentPoints,
+            gold:             data.gold             ?? profile.gold,
+            equippedItems:    data.equipped_items   ?? profile.equippedItems,
+            inventory:        data.inventory        ?? profile.inventory,
+            purchasedTalents: data.purchased_talents ?? profile.purchasedTalents,
+            pendingChests:    data.pending_chests   ?? profile.pendingChests,
+          });
+          // Also sync unlocked levels from Supabase
+          if (Array.isArray(data.unlocked_levels) && data.unlocked_levels.length) {
+            saveUnlocked(data.unlocked_levels);
+          }
+          // Write remote data into localStorage cache
+          localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        }
+      } catch (_) {}
+    }
   }
 
   function saveProfile() {
     localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    if (currentUserId) {
+      const unlockedLevels = loadUnlocked();
+      supabase.from('profiles').upsert({
+        id:                currentUserId,
+        username:          currentUsername || '',
+        player_level:      profile.playerLevel,
+        xp:                profile.xp,
+        gold:              profile.gold,
+        talent_points:     profile.talentPoints,
+        equipped_items:    profile.equippedItems,
+        inventory:         profile.inventory,
+        purchased_talents: profile.purchasedTalents,
+        pending_chests:    profile.pendingChests,
+        unlocked_levels:   unlockedLevels,
+        updated_at:        new Date().toISOString(),
+      }).then(() => {}).catch(console.error);
+    }
   }
 
   // ── Level unlocks persistence ──────────────────────────────────────────────
@@ -1259,6 +1553,198 @@
     return leveled;
   }
 
+  // ── Leaderboard ────────────────────────────────────────────────────────────
+  let lbChannel = null;
+
+  function getWeaponDisplay(equippedItems) {
+    if (!equippedItems) return '—';
+    const weaponId = equippedItems.weapon;
+    if (!weaponId) return '—';
+    const item = ITEM_POOL.find(it => it.id === weaponId);
+    return item ? item.name : weaponId;
+  }
+
+  async function refreshLeaderboard() {
+    const loadingEl = document.getElementById('lb-loading');
+    const errorEl   = document.getElementById('lb-error');
+    const tbodyEl   = document.getElementById('lb-tbody');
+    if (!loadingEl) return;
+
+    loadingEl.classList.remove('hidden');
+    errorEl.classList.add('hidden');
+    tbodyEl.innerHTML = '';
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, player_level, xp, equipped_items')
+        .order('player_level', { ascending: false })
+        .order('xp', { ascending: false })
+        .limit(50);
+
+      loadingEl.classList.add('hidden');
+
+      if (error) {
+        errorEl.textContent = 'Failed to load leaderboard. Try again.';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      if (!data || !data.length) {
+        tbodyEl.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#555;padding:20px;">No players yet. Be the first!</td></tr>';
+        return;
+      }
+
+      data.forEach((row, idx) => {
+        const tr = document.createElement('tr');
+        const isMe = row.id === currentUserId;
+        if (isMe) tr.className = 'lb-me';
+        tr.innerHTML =
+          `<td class="lb-rank">${idx + 1}</td>` +
+          `<td class="lb-username">${escapeHtml(row.username || 'Unnamed')}${isMe ? ' (you)' : ''}</td>` +
+          `<td class="lb-level">Lv ${row.player_level || 1}</td>` +
+          `<td class="lb-xp">${row.xp || 0} XP</td>` +
+          `<td class="lb-weapon">${escapeHtml(getWeaponDisplay(row.equipped_items))}</td>`;
+        tbodyEl.appendChild(tr);
+      });
+    } catch (err) {
+      loadingEl.classList.add('hidden');
+      errorEl.textContent = 'Failed to load leaderboard.';
+      errorEl.classList.remove('hidden');
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function subscribeLeaderboard() {
+    if (lbChannel) return;
+    lbChannel = supabase.channel('leaderboard')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, () => {
+        if (activeMenuTab === 'leaderboard') refreshLeaderboard();
+      })
+      .subscribe();
+  }
+
+  // ── Auth ───────────────────────────────────────────────────────────────────
+  function showAuthScreen() {
+    document.getElementById('auth-screen').classList.remove('hidden');
+  }
+
+  function hideAuthScreen() {
+    document.getElementById('auth-screen').classList.add('hidden');
+  }
+
+  async function onAuthSuccess(userId, username) {
+    currentUserId = userId;
+    currentUsername = username;
+    await loadProfile();
+    hideAuthScreen();
+    showScreen('menu');
+    subscribeLeaderboard();
+  }
+
+  function setupAuthUI() {
+    // Tab switching
+    document.querySelectorAll('.auth-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const which = tab.dataset.authTab;
+        document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.authTab === which));
+        document.getElementById('login-form').classList.toggle('hidden', which !== 'login');
+        document.getElementById('register-form').classList.toggle('hidden', which !== 'register');
+        document.getElementById('login-error').textContent = '';
+        document.getElementById('reg-error').textContent = '';
+        document.getElementById('reg-success').textContent = '';
+      });
+    });
+
+    // Login form
+    document.getElementById('login-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email    = document.getElementById('login-email').value.trim();
+      const password = document.getElementById('login-password').value;
+      const errEl    = document.getElementById('login-error');
+      const btn      = document.getElementById('login-btn');
+      errEl.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Logging in…';
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          errEl.textContent = error.message;
+        } else {
+          // Fetch username from profiles table
+          const { data: prof } = await supabase
+            .from('profiles')
+            .select('username')
+            .eq('id', data.user.id)
+            .single();
+          await onAuthSuccess(data.user.id, prof?.username || '');
+        }
+      } catch (err) {
+        errEl.textContent = 'An unexpected error occurred.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'LOGIN';
+      }
+    });
+
+    // Register form
+    document.getElementById('register-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const username = document.getElementById('reg-username').value.trim();
+      const email    = document.getElementById('reg-email').value.trim();
+      const password = document.getElementById('reg-password').value;
+      const errEl    = document.getElementById('reg-error');
+      const sucEl    = document.getElementById('reg-success');
+      const btn      = document.getElementById('register-btn');
+      errEl.textContent = '';
+      sucEl.textContent = '';
+      if (!username) { errEl.textContent = 'Username is required.'; return; }
+      if (password.length < 6) { errEl.textContent = 'Password must be at least 6 characters.'; return; }
+      btn.disabled = true;
+      btn.textContent = 'Creating account…';
+      try {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+          errEl.textContent = error.message;
+        } else {
+          // Insert profile row (may already exist if email confirmation is off)
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            username,
+            player_level: 1,
+            xp: 0,
+            gold: 0,
+            talent_points: 0,
+            equipped_items: {},
+            inventory: [],
+            purchased_talents: [],
+            pending_chests: [],
+            unlocked_levels: [0],
+            updated_at: new Date().toISOString(),
+          });
+          // If session is available immediately (email confirmation disabled), log in now
+          if (data.session) {
+            await onAuthSuccess(data.user.id, username);
+          } else {
+            sucEl.textContent = 'Account created! Check your email to confirm, then log in.';
+          }
+        }
+      } catch (err) {
+        errEl.textContent = 'An unexpected error occurred.';
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'CREATE ACCOUNT';
+      }
+    });
+  }
+
   // ── Screen state ───────────────────────────────────────────────────────────
   let screen = 'menu';
   let activeMenuTab = 'play';
@@ -1319,9 +1805,11 @@
     document.getElementById('tab-play').classList.toggle('hidden', tab !== 'play');
     document.getElementById('tab-character').classList.toggle('hidden', tab !== 'character');
     document.getElementById('tab-talents').classList.toggle('hidden', tab !== 'talents');
+    document.getElementById('tab-leaderboard').classList.toggle('hidden', tab !== 'leaderboard');
 
-    if (tab === 'character') renderCharacterTab();
-    if (tab === 'talents')   renderTalentsTab();
+    if (tab === 'character')   renderCharacterTab();
+    if (tab === 'talents')     renderTalentsTab();
+    if (tab === 'leaderboard') refreshLeaderboard();
   }
 
   function renderMenuTabs() {
@@ -2627,14 +3115,61 @@
     showScreen('menu');
   });
 
-  // Tab switching
+  // Menu tab switching
   document.querySelectorAll('.menu-tab').forEach(tab => {
     tab.addEventListener('click', () => switchMenuTab(tab.dataset.tab));
   });
 
+  // Leaderboard refresh
+  document.getElementById('lb-refresh-btn').addEventListener('click', () => refreshLeaderboard());
+
+  // Logout
+  document.getElementById('logout-btn').addEventListener('click', async () => {
+    await supabase.auth.signOut();
+    currentUserId = null;
+    currentUsername = null;
+    profile = defaultProfile();
+    localStorage.removeItem(PROFILE_KEY);
+    if (lbChannel) { supabase.removeChannel(lbChannel); lbChannel = null; }
+    showAuthScreen();
+  });
+
   // ── Bootstrap ─────────────────────────────────────────────────────────────
-  loadProfile();
-  showScreen('menu');
+  setupAuthUI();
+
+  // Hide all game UI until auth is resolved
+  document.getElementById('hud').style.display        = 'none';
+  document.getElementById('status').style.display     = 'none';
+  document.getElementById('game-area').style.display  = 'none';
+  document.getElementById('controls').style.display   = 'none';
+  document.getElementById('hint').style.display       = 'none';
+  document.querySelector('h1').style.display          = 'none';
+  document.getElementById('menu-overlay').classList.add('hidden');
+
+  // Check for existing session
+  (async () => {
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        const userId = data.session.user.id;
+        const { data: prof } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', userId)
+          .single();
+        currentUserId = userId;
+        currentUsername = prof?.username || '';
+        await loadProfile();
+        hideAuthScreen();
+        showScreen('menu');
+        subscribeLeaderboard();
+      } else {
+        showAuthScreen();
+      }
+    } catch (_) {
+      showAuthScreen();
+    }
+  })();
 </script>
 </body>
 </html>
