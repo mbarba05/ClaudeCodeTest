@@ -747,7 +747,7 @@
       align-items: center;
       justify-content: center;
       gap: 20px;
-      z-index: 130;
+      z-index: 250;
     }
     #item-drop-overlay.hidden { display: none; }
     #item-drop-title { font-size: 1.6rem; font-weight: bold; color: #ffd54f; }
@@ -2841,6 +2841,20 @@
           setTimeout(() => { gapEl.textContent = ''; gapEl.classList.remove('proj-fly'); }, 300);
         }
 
+        // Overkill passthrough: excess damage carries to the next enemy in the same column
+        if (target.hp < 0) {
+          let overflow = -target.hp;
+          // Candidates in the same column, sorted by row descending (frontmost first, skipping the primary target)
+          const colEnemies = enemies
+            .filter(e => e.col === col && e.id !== target.id && e.hp > 0)
+            .sort((a, b) => b.row - a.row);
+          for (const next of colEnemies) {
+            if (overflow <= 0) break;
+            next.hp -= overflow;
+            overflow = next.hp < 0 ? -next.hp : 0;
+          }
+        }
+
         // Fire ability: apply burn; burn DoT scales with stack count
         if (hasFireChar) {
           target.burning = true;
@@ -3542,7 +3556,7 @@
     document.getElementById('overlay').classList.remove('hidden');
   }
 
-  function triggerVictory() {
+  async function triggerVictory() {
     gameOver = true;
 
     // Unlock next level
@@ -3563,6 +3577,7 @@
     const goldDiggerRank = getTalentRank('gold_digger');
     if (goldDiggerRank > 0) goldEarned = Math.floor(goldEarned * (1 + goldDiggerRank * 0.1));
     profile.gold += goldEarned;
+    saveProfile(); // persist gold immediately
 
     // Grant a chest based on level; Lucky Find talent can upgrade tier
     let chestRarity = 'common';
@@ -3575,9 +3590,6 @@
       if (chestRarity === 'common') chestRarity = 'rare';
       else if (chestRarity === 'rare') chestRarity = 'epic';
     }
-    profile.pendingChests.push(chestRarity);
-
-    saveProfile();
 
     const rarityLabel = chestRarity.charAt(0).toUpperCase() + chestRarity.slice(1);
 
@@ -3586,11 +3598,79 @@
     document.getElementById('overlay-sub').textContent =
       `All ${currentLevelDef.waves} waves survived — ${score} enemies defeated`;
     document.getElementById('overlay-reward').textContent =
-      `+${levelXP} XP · 🪙 +${goldEarned} Gold · 📦 1 ${rarityLabel} Chest added!`;
+      `+${levelXP} XP · 🪙 +${goldEarned} Gold · 📦 1 ${rarityLabel} Chest earned!`;
+
+    // Show chest choice prompt inside the overlay before navigation buttons
+    let chestChoiceEl = document.getElementById('overlay-chest-choice');
+    if (!chestChoiceEl) {
+      chestChoiceEl = document.createElement('div');
+      chestChoiceEl.id = 'overlay-chest-choice';
+      chestChoiceEl.style.cssText =
+        'display:flex;flex-direction:column;align-items:center;gap:10px;margin-top:4px;';
+      const label = document.createElement('div');
+      label.style.cssText = 'font-size:0.88rem;color:#ffd54f;font-weight:bold;letter-spacing:1px;';
+      label.textContent = `📦 ${rarityLabel} Chest — open now or save for later?`;
+      chestChoiceEl.appendChild(label);
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display:flex;gap:12px;';
+      const openNowBtn = document.createElement('button');
+      openNowBtn.id = 'chest-open-now-btn';
+      openNowBtn.textContent = 'Open Now';
+      openNowBtn.style.cssText =
+        'background:#e94560;padding:8px 22px;font-size:0.85rem;border-radius:8px;';
+      const openLaterBtn = document.createElement('button');
+      openLaterBtn.id = 'chest-open-later-btn';
+      openLaterBtn.textContent = 'Open Later';
+      openLaterBtn.style.cssText =
+        'background:#0f3460;padding:8px 22px;font-size:0.85rem;border-radius:8px;';
+      btnRow.appendChild(openNowBtn);
+      btnRow.appendChild(openLaterBtn);
+      chestChoiceEl.appendChild(btnRow);
+      const overlayButtonsEl = document.getElementById('overlay-buttons');
+      overlayButtonsEl.parentNode.insertBefore(chestChoiceEl, overlayButtonsEl);
+    } else {
+      chestChoiceEl.style.display = 'flex';
+      chestChoiceEl.querySelector('div').textContent =
+        `📦 ${rarityLabel} Chest — open now or save for later?`;
+    }
 
     const btn1 = document.getElementById('overlay-btn');
     const btn2 = document.getElementById('overlay-btn2');
 
+    // Hide navigation buttons until the chest choice is resolved
+    btn1.style.display = 'none';
+    btn2.style.display = 'none';
+
+    document.getElementById('overlay').classList.remove('hidden');
+
+    // Wait for chest choice
+    await new Promise(resolve => {
+      const openNowBtn   = document.getElementById('chest-open-now-btn');
+      const openLaterBtn = document.getElementById('chest-open-later-btn');
+
+      const cleanup = () => {
+        openNowBtn.onclick   = null;
+        openLaterBtn.onclick = null;
+        chestChoiceEl.style.display = 'none';
+      };
+
+      openNowBtn.onclick = async () => {
+        cleanup();
+        // Open the chest immediately using the item-drop flow
+        openEquipmentChestDirect(chestRarity);
+        resolve();
+      };
+
+      openLaterBtn.onclick = () => {
+        cleanup();
+        // Save chest to pending
+        profile.pendingChests.push(chestRarity);
+        saveProfile();
+        resolve();
+      };
+    });
+
+    // Now show navigation buttons
     const unlocked = loadUnlocked();
     if (nextIdx < LEVEL_DEFS.length && unlocked.includes(nextIdx)) {
       btn1.textContent = 'Next Level';
@@ -3601,9 +3681,27 @@
     }
 
     btn2.textContent = 'Main Menu';
+    btn2.style.display = '';
     btn2.onclick = () => { showScreen('menu'); };
+  }
 
-    document.getElementById('overlay').classList.remove('hidden');
+  // Opens a chest earned from a level win directly (no pendingChests involvement)
+  function openEquipmentChestDirect(rarity) {
+    const pool = ITEM_POOL.filter(it => {
+      if (rarity === 'common') return it.rarity === 'common';
+      if (rarity === 'rare')   return it.rarity === 'rare';
+      if (rarity === 'epic')   return true;
+      return false;
+    });
+    const count = Math.random() < 0.4 ? 2 : 1;
+    const shuffled = shuffleArr([...pool]);
+    const drops = shuffled.slice(0, Math.min(count, shuffled.length));
+    for (const item of drops) profile.inventory.push(item.id);
+    saveProfile();
+    // Show item drop overlay; on done, hide the main victory overlay and go to menu
+    showItemDropOverlay(drops, rarity, () => {
+      // Items acknowledged — leave victory overlay visible for navigation
+    });
   }
 
   // ── Event wiring ──────────────────────────────────────────────────────────
