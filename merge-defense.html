@@ -2013,6 +2013,36 @@
 
     if (playerHP <= 0) { triggerGameOver(); return; }
 
+    // Last enemy(ies) may have died attacking — check for wave clear here too
+    if (enemies.length === 0) {
+      if (wave === MAX_WAVE) { triggerVictory(); return; }
+
+      const waveXP = wave * 10;
+      const leveled = grantXP(waveXP);
+      if (leveled && screen === 'game') showLevelUpToast();
+
+      if (hasTalent('resilience')) {
+        playerHP = Math.min(playerMaxHP, playerHP + 5);
+      }
+
+      document.getElementById('status').textContent = `✨ Wave ${wave} cleared! +${waveXP} XP! Choose your rewards!`;
+      playerChars.forEach(ch => {
+        const el = getCell(ch.row, ch.col);
+        if (el) { el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 550); }
+      });
+
+      await delay(900);
+      wave++;
+      await showOrbRewards();
+      document.getElementById('orb-overlay').classList.add('hidden');
+      spawnWave(wave);
+      renderAll();
+      document.getElementById('status').textContent = `Wave ${wave} / ${MAX_WAVE} — Position fighters, then End Turn.`;
+      turnPhase = 'player';
+      document.getElementById('end-turn-btn').disabled = false;
+      return;
+    }
+
     turnPhase = 'player';
     document.getElementById('end-turn-btn').disabled = false;
     renderPlayerZone();
