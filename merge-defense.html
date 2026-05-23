@@ -785,6 +785,37 @@
     .fire-badge  { color:#ff6b35; }
     .chain-flash { color:#ffe600; }
     .ice-badge   { color:#a8dadc; }
+
+    /* Lightning chain flash on chained enemy cells */
+    @keyframes lightning-chain-anim {
+      0%   { box-shadow: 0 0 0px rgba(255,230,0,0); border-color: #ffe600; background: rgba(255,230,0,0.22); }
+      40%  { box-shadow: 0 0 14px rgba(255,230,0,0.9); border-color: #fff700; background: rgba(255,230,0,0.38); }
+      100% { box-shadow: 0 0 0px rgba(255,230,0,0); border-color: inherit; background: inherit; }
+    }
+    .lightning-chain {
+      animation: lightning-chain-anim 0.28s ease-out forwards;
+    }
+
+    /* Plant marker overlay on enemy cell */
+    .plant-marker {
+      position: absolute;
+      bottom: 2px;
+      left: 2px;
+      font-size: 1rem;
+      line-height: 1;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    /* Plant attack upward flash */
+    @keyframes plant-attack-anim {
+      0%   { box-shadow: 0 0 0px rgba(87,194,100,0); border-color: #57c264; background: rgba(87,194,100,0.2); }
+      40%  { box-shadow: 0 0 12px rgba(87,194,100,0.85); border-color: #7fff8a; background: rgba(87,194,100,0.35); }
+      100% { box-shadow: 0 0 0px rgba(87,194,100,0); border-color: inherit; background: inherit; }
+    }
+    .plant-attack-flash {
+      animation: plant-attack-anim 0.3s ease-out forwards;
+    }
   </style>
 </head>
 <body>
@@ -1501,6 +1532,7 @@
   let pendingOrbs = [];
   let orbsPhase = false;
   let upgrades = { statBoost: false, icePending: 0 };
+  let plants = []; // plant markers placed by plant ability: { row, col }
   let gridBuilt = false;
   let currentLevel = 0;
   let currentLevelDef = LEVEL_DEFS[0];
@@ -1614,6 +1646,7 @@
     pendingOrbs = [];
     orbsPhase = false;
     upgrades = { statBoost: false, icePending: 0 };
+    plants = [];
     updateUpgradeDisplay();
     document.getElementById('orb-overlay').classList.add('hidden');
     document.getElementById('chest-overlay').classList.add('hidden');
@@ -1687,6 +1720,15 @@
         `<div class="enemy-stats">${e.hp}/${e.maxHp}</div>` +
         fireBadge + iceBadge;
       el.className = `cell enemy-cell enemy-t${tier}`;
+    }
+    // Render plant markers on their cells (may be on enemy cells or empty cells)
+    for (const p of plants) {
+      const el = getCell(p.row, p.col);
+      if (!el) continue;
+      const marker = document.createElement('div');
+      marker.className = 'plant-marker';
+      marker.textContent = '🌱';
+      el.appendChild(marker);
     }
   }
 
@@ -1783,7 +1825,7 @@
           target.burnDamage = Math.floor(dmg * 0.4);
         }
 
-        // Lightning ability: chain damage to adjacent enemy
+        // Lightning ability: chain damage to adjacent enemies, with visual flash
         const hasLightningChar = charsHere.some(c => c.ability === 'lightning');
         if (hasLightningChar) {
           const baseDmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
@@ -1796,7 +1838,19 @@
           );
           if (adjacent.length) {
             const chainTarget = adjacent.reduce((min, e) => e.hp < min.hp ? e : min, adjacent[0]);
+            // Flash the primary target and chain target cells before dealing damage
+            const primaryEl = getCell(target.row, target.col);
+            const chainEl   = getCell(chainTarget.row, chainTarget.col);
+            if (primaryEl) {
+              primaryEl.classList.add('lightning-chain');
+              setTimeout(() => primaryEl.classList.remove('lightning-chain'), 300);
+            }
+            if (chainEl) {
+              chainEl.classList.add('lightning-chain');
+              setTimeout(() => chainEl.classList.remove('lightning-chain'), 300);
+            }
             chainTarget.hp -= chainDmg;
+            // Secondary gap flash for the chain hit
             if (gapEl) {
               setTimeout(() => {
                 gapEl.textContent = '⚡';
@@ -1812,30 +1866,25 @@
           }
         }
 
-        // Plants ability: pierce — hit next enemy to the right in same/adjacent row
+        // Plants ability: place a plant marker on the cell behind the target (one row closer to row 0)
+        // The plant will attack at the start of the next resolveTurn()
         const hasPlantsChar = charsHere.some(c => c.ability === 'plants');
         if (hasPlantsChar) {
-          const baseDmg = charsHere.reduce((s, c) => s + LEVEL_CONFIG[c.level - 1].damage, 0);
-          const pierceDmg = Math.floor(baseDmg * 0.35);
-          let pierceTarget = null;
-          for (let sc = target.col + 1; sc < COLS && !pierceTarget; sc++) {
-            const candidates = enemies.filter(e =>
-              e.id !== target.id &&
-              e.col === sc &&
-              Math.abs(e.row - target.row) <= 1
-            ).sort((a, b) => b.row - a.row);
-            if (candidates.length) pierceTarget = candidates[0];
+          // Place plant on the target's cell (the plant "lands" on the hit enemy row)
+          const plantRow = target.row;
+          const plantCol = target.col;
+          // Only place one plant per cell
+          const alreadyPlanted = plants.some(p => p.row === plantRow && p.col === plantCol);
+          if (!alreadyPlanted) {
+            plants.push({ row: plantRow, col: plantCol });
           }
-          if (pierceTarget) {
-            pierceTarget.hp -= pierceDmg;
-            const pierceGapEl = document.querySelector(`.gap-cell[data-col="${pierceTarget.col}"]`);
-            if (pierceGapEl) {
-              setTimeout(() => {
-                pierceGapEl.textContent = '🌿';
-                pierceGapEl.classList.add('proj-fly');
-                setTimeout(() => { pierceGapEl.textContent = ''; pierceGapEl.classList.remove('proj-fly'); }, 300);
-              }, 150);
-            }
+          // Show a visual projectile heading toward the target
+          if (gapEl) {
+            setTimeout(() => {
+              gapEl.textContent = '🌿';
+              gapEl.classList.add('proj-fly');
+              setTimeout(() => { gapEl.textContent = ''; gapEl.classList.remove('proj-fly'); }, 300);
+            }, 80);
           }
         }
       }
@@ -1916,8 +1965,55 @@
     resolveTurn();
   }
 
+  // ── Plant attack step (runs at start of each resolveTurn, before player attack) ──
+  function plantAttackStep() {
+    if (!plants.length) return;
+    for (const p of plants) {
+      // Search upward (decreasing row) from plant's row in the same column
+      let plantTarget = null;
+      for (let r = p.row - 1; r >= 0 && !plantTarget; r--) {
+        plantTarget = enemies.find(e => e.row === r && e.col === p.col) || null;
+      }
+      if (plantTarget) {
+        // Plant deals moderate damage (same as base column damage from a L1 char as fallback,
+        // but we use a fixed reasonable value tied to the plant — 60% of L3 damage)
+        const plantDmg = Math.floor(LEVEL_CONFIG[2].damage * 0.6); // 36 damage
+        plantTarget.hp -= plantDmg;
+        // Flash the hit enemy cell
+        const hitEl = getCell(plantTarget.row, plantTarget.col);
+        if (hitEl) {
+          hitEl.classList.add('plant-attack-flash');
+          setTimeout(() => hitEl.classList.remove('plant-attack-flash'), 350);
+        }
+        // Show a brief projectile in the gap cell of the plant's column
+        const plantGapEl = document.querySelector(`.gap-cell[data-col="${p.col}"]`);
+        if (plantGapEl) {
+          plantGapEl.textContent = '🌿';
+          plantGapEl.classList.add('proj-fly');
+          setTimeout(() => { plantGapEl.textContent = ''; plantGapEl.classList.remove('proj-fly'); }, 300);
+        }
+      }
+    }
+    plants = []; // clear plants after they attack
+  }
+
   async function resolveTurn() {
     const MAX_WAVE = currentLevelDef.waves;
+
+    // Plant attack: any plants placed last turn fire first
+    if (plants.length) {
+      document.getElementById('status').textContent = '🌿 Plants attacking…';
+      plantAttackStep();
+      renderEnemyZone();
+      // Remove plant-killed enemies
+      const plantKilled = enemies.filter(e => e.hp <= 0).length;
+      score += plantKilled;
+      enemies = enemies.filter(e => e.hp > 0);
+      renderEnemyZone();
+      updateHUD();
+      await delay(350);
+    }
+
     document.getElementById('status').textContent = '⚔️ Fighters attacking…';
     playerAttackStep();
     renderEnemyZone();
@@ -2269,12 +2365,13 @@
       const el = getCell(targetRow, targetCol);
       if (el) { el.classList.add('merge-pop'); setTimeout(() => el.classList.remove('merge-pop'), 450); }
     } else {
-      // Different-level swap — does NOT end the turn
+      // Different-level swap — ends the turn (same as moving to empty cell)
       const srcRow = src.row; const srcCol = src.col;
       src.row = targetRow; src.col = targetCol;
       dst.row = srcRow;    dst.col = srcCol;
       dragSource = null;
       renderPlayerZone();
+      handleEndTurn();
     }
   }
 
